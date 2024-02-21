@@ -63,4 +63,4 @@ class MagicCoderRunner:
         generated_testcases = get_testcases()
         run_genetic_algorithm(base_prompts_re=base_prompts_re_codemagic, codeLLama_tokenizer=None, codeLLama_model=None,
                               magic_coder=magic_coder, final_test_cases=final_test_cases,
-                              generated_testcases=generated_testcases, human_eval=human_eval)
+                              generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=40)

@@ -10,5 +10,5 @@ experiments = {
 
 }
 experiment_number = input(f'What experiment do you want to run? {str(experiments)}')
-if experiment_number == '1':
-    MagicCoderRunner().run_experiment()
+# if experiment_number == '1':
+MagicCoderRunner().run_experiment()
