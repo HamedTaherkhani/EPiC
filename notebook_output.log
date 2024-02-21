@@ -1,0 +1,46 @@
+Running on cdr2577.int.cedar.computecanada.ca
+
+Lmod is automatically replacing "intel/2020.1.217" with "gcc/9.3.0".
+
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) openmpi/4.0.3
+
+[I 2024-02-19 15:42:33.264 ServerApp] Package jupyterlab took 0.0000s to import
+[I 2024-02-19 15:42:37.036 ServerApp] Package jupyter_lsp took 3.7711s to import
+[W 2024-02-19 15:42:37.037 ServerApp] A `_jupyter_server_extension_points` function was not found in jupyter_lsp. Instead, a `_jupyter_server_extension_paths` function was found and will be used for now. This function name will be deprecated in future releases of Jupyter Server.
+[I 2024-02-19 15:42:38.128 ServerApp] Package jupyter_server_terminals took 1.0906s to import
+[I 2024-02-19 15:42:38.129 ServerApp] Package notebook_shim took 0.0000s to import
+[W 2024-02-19 15:42:38.129 ServerApp] A `_jupyter_server_extension_points` function was not found in notebook_shim. Instead, a `_jupyter_server_extension_paths` function was found and will be used for now. This function name will be deprecated in future releases of Jupyter Server.
+[I 2024-02-19 15:42:38.181 ServerApp] jupyter_lsp | extension was successfully linked.
+[I 2024-02-19 15:42:38.189 ServerApp] jupyter_server_terminals | extension was successfully linked.
+[I 2024-02-19 15:42:38.198 ServerApp] jupyterlab | extension was successfully linked.
+[I 2024-02-19 15:43:11.784 ServerApp] notebook_shim | extension was successfully linked.
+[I 2024-02-19 15:43:13.025 ServerApp] notebook_shim | extension was successfully loaded.
+[I 2024-02-19 15:43:13.030 ServerApp] jupyter_lsp | extension was successfully loaded.
+[I 2024-02-19 15:43:13.033 ServerApp] jupyter_server_terminals | extension was successfully loaded.
+[I 2024-02-19 15:43:13.039 LabApp] JupyterLab extension loaded from /project/6087623/hamedth/venv3.9/lib/python3.9/site-packages/jupyterlab
+[I 2024-02-19 15:43:13.039 LabApp] JupyterLab application directory is /project/6087623/hamedth/venv3.9/share/jupyter/lab
+[I 2024-02-19 15:43:13.064 LabApp] Extension Manager is 'pypi'.
+[I 2024-02-19 15:43:13.068 ServerApp] jupyterlab | extension was successfully loaded.
+[I 2024-02-19 15:43:13.069 ServerApp] Serving notebooks from local directory: /project/6087623/hamedth/PromptOPT
+[I 2024-02-19 15:43:13.069 ServerApp] Jupyter Server 2.10.1 is running at:
+[I 2024-02-19 15:43:13.069 ServerApp] http://cdr2577.int.cedar.computecanada.ca:2244/lab?token=d8ce0b1d2479338b2d542c24f869e16ebaaeb169f7c612de
+[I 2024-02-19 15:43:13.069 ServerApp]     http://127.0.0.1:2244/lab?token=d8ce0b1d2479338b2d542c24f869e16ebaaeb169f7c612de
+[I 2024-02-19 15:43:13.069 ServerApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 2024-02-19 15:43:13.578 ServerApp] 
+    
+    To access the server, open this file in a browser:
+        file:///home/hamedth/.local/share/jupyter/runtime/jpserver-170789-open.html
+    Or copy and paste one of these URLs:
+        http://cdr2577.int.cedar.computecanada.ca:2244/lab?token=d8ce0b1d2479338b2d542c24f869e16ebaaeb169f7c612de
+        http://127.0.0.1:2244/lab?token=d8ce0b1d2479338b2d542c24f869e16ebaaeb169f7c612de
+[I 2024-02-19 15:43:13.749 ServerApp] Skipped non-installed server(s): bash-language-server, dockerfile-language-server-nodejs, javascript-typescript-langserver, jedi-language-server, julia-language-server, pyright, python-language-server, python-lsp-server, r-languageserver, sql-language-server, texlab, typescript-language-server, unified-language-server, vscode-css-languageserver-bin, vscode-html-languageserver-bin, vscode-json-languageserver-bin, yaml-language-server
+   This page should redirect you to a Jupyter application. If it doesn't,
+   [1]click here to go to Jupyter.
+
+References
+
+   Visible links
+   1. http://cdr2577.int.cedar.computecanada.ca:2244/lab?token=d8ce0b1d2479338b2d542c24f869e16ebaaeb169f7c612de
+slurmstepd: error: *** JOB 25543574 ON cdr2577 CANCELLED AT 2024-02-20T15:41:46 DUE TO TIME LIMIT ***
