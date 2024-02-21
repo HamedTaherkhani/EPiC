@@ -13,8 +13,6 @@ class MagicCoderRunner:
         super(MagicCoderRunner, self).__init__()
 
     def load_magiccoder(self):
-        import os
-        os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
 
         MAGICODER_PROMPT = """You are an exceptionally intelligent coding assistant that consistently delivers accurate and reliable responses to user instructions.
 
