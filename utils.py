@@ -5,9 +5,20 @@ from evaluate import load
 import time
 import random
 from multiprocessing import Pool
+from itertools import repeat
+from itertools import product
+
 
 def ss(aa):
     return aa[2]
+
+
+def f(a_test, candidates):
+    print(a_test)
+    print(candidates)
+    pass_at_k, results = code_eval_metric.compute(references=[a_test], predictions=candidates, k=[1])
+    return pass_at_k
+
 
 special_token = "#SPECIAL_TOKEN"
 code_eval_metric = load("code_eval")
@@ -243,19 +254,23 @@ def evaluate_prompt_on_generated_prompts(test_cases, prompt, codeLLama_tokenizer
             return 0, 0
     elif model_to_test == 1:
         filling = \
-        magic_coder(prompt.replace('#SPECIAL_TOKEN', ''), max_length=512, num_return_sequences=1, temperature=0.0)[0][
+        magic_coder(prompt.replace('#SPECIAL_TOKEN', ''), max_length=512, num_return_sequences=1, do_sample=False)[0][
             'generated_text']
         filling = process_a_code_magic_coder(filling, prompt_index,human_eval)
     ##
     candidate = [filling]
     candidates = [candidate]
 
-    def f(a_test):
+    pass_total = 0
+    for a_test in test_cases:
         pass_at_k, results = code_eval_metric.compute(references=[a_test], predictions=candidates, k=[1])
-        return pass_at_k
-    with Pool() as p:
-        results = p.map(f, test_cases)
-    return sum(results) / len(results)
+        pass_total += pass_at_k['pass@1']
+    return pass_total / len(test_cases)
+
+    # with Pool() as p:
+    #     results = p.starmap(f, zip(test_cases, repeat(candidates)))
+    # print(results)
+    # return sum(results) / len(results)
 
 
 def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164):
