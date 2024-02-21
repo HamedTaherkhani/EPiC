@@ -8,11 +8,6 @@ from multiprocessing import Pool
 from itertools import repeat
 from itertools import product
 
-
-def ss(aa):
-    return aa[2]
-
-
 def f(a_test, candidates):
     print(a_test)
     print(candidates)
@@ -29,7 +24,6 @@ os.environ["HF_ALLOW_CODE_EVAL"] = "1"
 def choose_candidates(prompts_set, number=1):
     # print(prompts_set)
     chosen_prompts = []
-    prompts_set = sorted(prompts_set, key=ss, reverse=True)
     try:
         for i in range(number):
             # temp = random.choices(prompts_set, weights=((ss[2]+ss[1]) for ss in prompts_set), k=1)[0]
