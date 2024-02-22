@@ -1,7 +1,7 @@
 import os
 os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
 from magiccoder_experiments import MagicCoderRunner
-
+# from codellama_experiments import CodellamaExperiments
 experiments = {
     1: 'genetic-magiccoder-llama2',
     2: 'genetic-codellama-llama2',
@@ -14,3 +14,4 @@ experiments = {
 # experiment_number = input(f'What experiment do you want to run? {str(experiments)}')
 # if experiment_number == '1':
 MagicCoderRunner().run_experiment()
+# CodellamaExperiments().run_experiment()

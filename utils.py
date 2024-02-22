@@ -22,7 +22,6 @@ os.environ["HF_ALLOW_CODE_EVAL"] = "1"
 
 
 def choose_candidates(prompts_set, number=1):
-    # print(prompts_set)
     chosen_prompts = []
     try:
         for i in range(number):
@@ -245,7 +244,7 @@ def evaluate_prompt_on_generated_prompts(test_cases, prompt, codeLLama_tokenizer
             filling = aas[0] + 'def' + aas[1]
         except Exception as e:
             # print(prompt)
-            return 0, 0
+            return 0
     elif model_to_test == 1:
         filling = \
         magic_coder(prompt.replace('#SPECIAL_TOKEN', ''), max_length=512, num_return_sequences=1, do_sample=False)[0][
@@ -267,7 +266,7 @@ def evaluate_prompt_on_generated_prompts(test_cases, prompt, codeLLama_tokenizer
     # return sum(results) / len(results)
 
 
-def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164):
+def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0):
 
     all_generated_promts = []
     # all_generated_promts = []
@@ -276,21 +275,19 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     import warnings
     warnings.filterwarnings("ignore")
-    # number_of_tests = 164
     iterations = 4
-    run_evaluation_each_generation = False
-    model_to_test = 1  # 0 codeLama, 1 Magiccoder
+    run_evaluation_each_generation = True
     ## time management
-    time_total = 0
     time_total_per_instance = []
     time_evaluation = []
+    time_test = []
     time_next_make_generation = []
 
     # if model_to_test == 1:
     #     base_prompts_re = base_prompts_re_codemagic.copy()
 
-    passed_fillings = [0 for i in range(164)]
-
+    passed_codes = [False for i in range(number_of_tests)]
+    start = time.time()
     for iteration in tqdm(range(iterations)):
         time_total_per_instance.append([])
         time_evaluation.append([])
@@ -300,39 +297,48 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
         chosen_prompts = [rr[0] for rr in base_prompts_re[0:number_of_tests]]  ##here
         ## evaluation
         if run_evaluation_each_generation:
+            e = time.time()
             if iteration != 1000:
                 if model_to_test == 0:
                     fillings = []
-                    for a_token in tqdm(chosen_prompts):
+                    for index, a_token in tqdm(enumerate(chosen_prompts)):
                         if not validate_prompt(
                                 a_token):  ##this is because codeLLama_model has no max_new_tokens set and generates infinite output
                             filling = 'teeeeeeeeeeeeeeeeest'
                             fillings.append([filling])
                             continue
-                        prompt = codeLLama_tokenizer(a_token, return_tensors="pt")["input_ids"]  ##.to('cuda:0')
-                        generated_id = codeLLama_model.generate(prompt, max_new_tokens=128)
-                        filling = codeLLama_tokenizer.batch_decode(generated_id, skip_special_tokens=True)[0]
-                        try:
-                            aas = filling.split('def')
-                            filling = aas[0] + 'def' + aas[1]
-                        except IndexError:
-                            filling = 'teeeeeeeeeeeeeeeeest'
-                        fillings.append([filling])
+                        if not passed_codes[index]:
+                            prompt = codeLLama_tokenizer(a_token, return_tensors="pt")["input_ids"]  ##.to('cuda:0')
+                            generated_id = codeLLama_model.generate(prompt, max_new_tokens=128)
+                            filling = codeLLama_tokenizer.batch_decode(generated_id, skip_special_tokens=True)[0]
+                            try:
+                                aas = filling.split('def')
+                                filling = aas[0] + 'def' + aas[1]
+                            except IndexError:
+                                filling = 'teeeeeeeeeeeeeeeeest'
+                            fillings.append([filling])
+                        else:
+                            fillings.append([passed_codes[index]])
                 elif model_to_test == 1:
                     fillings = []
-                    for a_token in tqdm(chosen_prompts):
-                        filling = magic_coder(a_token.replace('#SPECIAL_TOKEN', ''), max_length=800, num_return_sequences=1,
-                                              temperature=0.0)[0]['generated_text']
-                        fillings.append(filling)
+                    for index, a_token in tqdm(enumerate(chosen_prompts)):
+                        if not passed_codes[index]:
+                            filling = magic_coder(a_token.replace('#SPECIAL_TOKEN', ''), max_length=800, num_return_sequences=1,
+                                                  temperature=0.0)[0]['generated_text']
+                            fillings.append(filling)
+                        else:
+                            fillings.append(passed_codes[index])
                     fillings = process_the_code_magic_coder(fillings, human_eval)
                     fillings = [[fil] for fil in fillings]
                 errorrrs = []
                 pass_at_k, results = code_eval_metric.compute(references=final_test_cases[0:number_of_tests],
                                                               predictions=fillings, k=[1])  ##here
-                print(f'iteration {iteration} pass@1 -------------------------------------\n')
-                print(pass_at_k)
+                for key, value in results.items():
+                    if value[0][1]['passed']:
+                        passed_codes[value[0][1]['task_id']] = fillings[value[0][1]['task_id']][0]
                 evaluations.append((pass_at_k, results))
-
+                print(pass_at_k)
+                time_test.append(time.time() - e)
                 # for key,item in results[1].items():
                 #     if item[0][1]['passed']:
                 #         passed_fillings[item[0][1]['task_id']] = fillings[item[0][1]['task_id']][0]
@@ -375,25 +381,25 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
                     time_next_make_generation[iteration].append(0)
                     continue
                 b = time.time()
-                time_evaluation.append(b - a)
+                time_evaluation[iteration].append(b - a)
 
                 next_generation_prompts = []
                 number_of_generations_by_mutations = 2
                 number_of_generations_by_crossover = 2
                 straight_of_generations_by_mutations = 1
                 ## mutation
-                selected_candidates_for_mutations = choose_candidates(candidates, number_of_generations_by_mutations)
+                selected_candidates_for_mutations = choose_candidates(candidates.copy(), number_of_generations_by_mutations)
                 for a_candidate in selected_candidates_for_mutations:
                     llama_prompts_final = mutate_prompts_api(a_candidate)
                     # time.sleep(3)
                     next_generation_prompts.append(llama_prompts_final)
                 ##crossover
                 for j in range(number_of_generations_by_crossover):
-                    llama_prompts_final = crossover_prompts_api(candidates)
+                    llama_prompts_final = crossover_prompts_api(candidates.copy())
                     # time.sleep(3)
                     next_generation_prompts.append(llama_prompts_final)
                 ## straight select
-                next_generation_prompts.extend(choose_candidates(candidates, straight_of_generations_by_mutations))
+                next_generation_prompts.extend(choose_candidates(candidates.copy(), straight_of_generations_by_mutations))
                 # print(f'nexxxxxxxxxxxxxxxxxxxxxxxxxx for {idx}')
                 # print(next_generation_prompts)
                 base_prompts_re[idx] = next_generation_prompts
@@ -407,5 +413,8 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
     print(time_next_make_generation)
     print('time_evaluation')
     print(time_evaluation)
+    print('time_test')
+    print(time_test)
     print('time_total')
-    print(time_total)
+    print(time.time() - start)
+    print(evaluations)
