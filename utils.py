@@ -8,7 +8,7 @@ from multiprocessing import Pool
 from itertools import repeat
 from itertools import product
 from gensimutils import provide_alternate_sentence
-
+max_response_length = 5000
 def f(a_test, candidates):
     print(a_test)
     print(candidates)
@@ -70,8 +70,8 @@ def process_prompt2(res, a_candidate):
             examples = p[sp + 3 + comment + 3:].find("'''")
     llama_prompts_final = p.replace(p[sp + 17 + comment + 3:sp + 3 + comment + 3 + examples],
                                     res[f + len('Explanation:'):e])
-    if len(llama_prompts_final) > 1000:
-        llama_prompts_final = llama_prompts_final[0:1000]
+    if len(llama_prompts_final) > max_response_length + 1:
+        llama_prompts_final = llama_prompts_final[0:max_response_length]
     return llama_prompts_final
 
 
@@ -79,6 +79,8 @@ def process_api_prompt(res, a_candidate):
     f = res.find("Explanation")
     e = res.find("End")
     res = res[f + 11:e]
+    if len(res) > max_response_length + 1:
+        res = res[0:max_response_length]
     exp = [m.start() for m in re.finditer(special_token, a_candidate)]
     if len(exp) == 0:
         exp = [m.start() for m in re.finditer("'''", a_candidate)]
@@ -283,7 +285,7 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
     time_evaluation = []
     time_test = []
     time_next_make_generation = []
-
+    number_of_supposed_passed_codes = []
     # if model_to_test == 1:
     #     base_prompts_re = base_prompts_re_codemagic.copy()
 
@@ -344,7 +346,7 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
                 #     if item[0][1]['passed']:
                 #         passed_fillings[item[0][1]['task_id']] = fillings[item[0][1]['task_id']][0]
             ## evaluations
-
+        number_of_supposed_passed_codes.append(0)
         for idx, a_prompt_set in tqdm(enumerate(base_prompts_re[0:number_of_tests])):  ##here
             print(idx)
             c = time.time()
@@ -354,13 +356,14 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
                 time_evaluation[iteration].append(0)
                 time_next_make_generation[iteration].append(0)
                 passed = True
+                number_of_supposed_passed_codes[iteration] +=1
                 continue
             else:
                 candidates = []
                 a = time.time()
                 for single_prompt in a_prompt_set:
                     passed = False
-                    passat10 = evaluate_prompt_on_generated_prompts(test_cases=generated_testcases[idx][0:3],
+                    passat10 = evaluate_prompt_on_generated_prompts(test_cases=generated_testcases[idx][0:4],
                                                                     prompt=single_prompt, model_to_test=model_to_test,
                                                                     prompt_index=idx,
                                                                     codeLLama_tokenizer=codeLLama_tokenizer,
@@ -408,6 +411,8 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
             d = time.time()
             time_next_make_generation[iteration].append(d - b)
             time_total_per_instance[iteration].append(d - c)
+    print('number_of_supposed_passed_codes')
+    print(number_of_supposed_passed_codes)
     print('time_total_per_instance')
     print(time_total_per_instance)
     print('time_next_make_generation')
@@ -437,7 +442,7 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
     time_evaluation = []
     time_test = []
     time_next_make_generation = []
-
+    number_of_supposed_passed_codes = []
     # if model_to_test == 1:
     #     base_prompts_re = base_prompts_re_codemagic.copy()
 
@@ -498,7 +503,7 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
                 #     if item[0][1]['passed']:
                 #         passed_fillings[item[0][1]['task_id']] = fillings[item[0][1]['task_id']][0]
             ## evaluations
-
+        number_of_supposed_passed_codes.append(0)
         for idx, a_prompt_set in tqdm(enumerate(base_prompts_re[0:number_of_tests])):  ##here
             print(idx)
             c = time.time()
@@ -508,6 +513,7 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
                 time_evaluation[iteration].append(0)
                 time_next_make_generation[iteration].append(0)
                 passed = True
+                number_of_supposed_passed_codes[iteration] += 1
                 continue
             else:
                 candidates = []
@@ -567,6 +573,8 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
             d = time.time()
             time_next_make_generation[iteration].append(d - b)
             time_total_per_instance[iteration].append(d - c)
+    print('number_of_supposed_passed_codes')
+    print(number_of_supposed_passed_codes)
     print('time_total_per_instance')
     print(time_total_per_instance)
     print('time_next_make_generation')

@@ -4,7 +4,7 @@ from chat_gpt_prompts import get_initial_population_from_chat_gpt
 from gensim_prompts import get_gensim_prompts
 from humaneval_loader import HumanEvalLoader
 from chat_gpt_generated_testcases import get_testcases
-from utils import run_genetic_algorithm
+from utils import run_genetic_algorithm, run_genetic_algorithm_gensim
 
 import re
 
@@ -73,7 +73,7 @@ class MagicCoderRunner:
         human_eval = human_eval_loader.get_human_eval()
         final_test_cases = human_eval_loader.get_final_test_cases()
         generated_testcases = get_testcases()
-        run_genetic_algorithm(base_prompts_re=first_generation_prompts_refactored, codeLLama_tokenizer=None, codeLLama_model=None,
+        run_genetic_algorithm_gensim(base_prompts_re=first_generation_prompts_refactored, codeLLama_tokenizer=None, codeLLama_model=None,
                               magic_coder=magic_coder, final_test_cases=final_test_cases,
                               generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164,
                               model_to_test=1)
