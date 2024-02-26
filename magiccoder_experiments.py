@@ -1,6 +1,7 @@
 from transformers import pipeline
 import torch
 from chat_gpt_prompts import get_initial_population_from_chat_gpt
+from gensim_prompts import get_gensim_prompts
 from humaneval_loader import HumanEvalLoader
 from chat_gpt_generated_testcases import get_testcases
 from utils import run_genetic_algorithm
@@ -62,3 +63,17 @@ class MagicCoderRunner:
         run_genetic_algorithm(base_prompts_re=base_prompts_re_codemagic, codeLLama_tokenizer=None, codeLLama_model=None,
                               magic_coder=magic_coder, final_test_cases=final_test_cases,
                               generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164, model_to_test=1)
+
+    def run_experiments_gensim(self):
+        import os
+        os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
+        magic_coder = self.load_magiccoder()
+        first_generation_prompts_refactored = get_gensim_prompts()
+        human_eval_loader = HumanEvalLoader()
+        human_eval = human_eval_loader.get_human_eval()
+        final_test_cases = human_eval_loader.get_final_test_cases()
+        generated_testcases = get_testcases()
+        run_genetic_algorithm(base_prompts_re=first_generation_prompts_refactored, codeLLama_tokenizer=None, codeLLama_model=None,
+                              magic_coder=magic_coder, final_test_cases=final_test_cases,
+                              generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164,
+                              model_to_test=1)
