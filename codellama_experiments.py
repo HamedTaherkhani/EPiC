@@ -3,7 +3,8 @@ import torch
 from chat_gpt_prompts import get_initial_population_from_chat_gpt
 from humaneval_loader import HumanEvalLoader
 from chat_gpt_generated_testcases import get_testcases
-from utils import run_genetic_algorithm
+from utils import run_genetic_algorithm, run_genetic_algorithm_gensim
+from gensim_prompts import get_gensim_prompts
 
 class CodellamaExperiments:
     def __init__(self):
@@ -118,3 +119,17 @@ class CodellamaExperiments:
         run_genetic_algorithm(base_prompts_re=base_prompts_re_codemagic, codeLLama_tokenizer=codeLLama_tokenizer, codeLLama_model=codeLLama_model,
                               magic_coder=None, final_test_cases=final_test_cases,
                               generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=5, model_to_test=0)
+
+    def run_experiments_gensim(self):
+        codeLLama_tokenizer, codeLLama_model = self.load_codellama()
+        first_generation_prompts_refactored = get_gensim_prompts()
+        human_eval_loader = HumanEvalLoader()
+        human_eval = human_eval_loader.get_human_eval()
+        final_test_cases = human_eval_loader.get_final_test_cases()
+        generated_testcases = get_testcases()
+        run_genetic_algorithm_gensim(base_prompts_re=first_generation_prompts_refactored,
+                                     codeLLama_tokenizer=codeLLama_tokenizer,
+                                     codeLLama_model=codeLLama_model,
+                                     magic_coder=None, final_test_cases=final_test_cases,
+                                     generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=20,
+                                     model_to_test=0)

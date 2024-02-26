@@ -23,7 +23,7 @@ elif experiment_id == 2:
 elif experiment_id == 3:
     MagicCoderRunner().run_experiments_gensim()
 elif experiment_id == 4:
-    pass
+    CodellamaExperiments().run_experiments_gensim()
 elif experiment_id == 5:
     pass
 elif experiment_id == 6:
