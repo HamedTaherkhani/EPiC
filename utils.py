@@ -4,11 +4,12 @@ from tqdm import tqdm
 from evaluate import load
 import time
 import random
+import numpy as np
 from multiprocessing import Pool
 from itertools import repeat
 from itertools import product
 from gensimutils import provide_alternate_sentence
-max_response_length = 5000
+max_response_length = 2500
 def f(a_test, candidates):
     print(a_test)
     print(candidates)
@@ -318,6 +319,39 @@ def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, e
         #         passed_fillings[item[0][1]['task_id']] = fillings[item[0][1]['task_id']][0]
 
 
+def print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation, time_next_make_generation,
+                        time_test, time_total_per_instance):
+    print('number_of_supposed_passed_codes')
+    print(number_of_supposed_passed_codes)
+    print('time_total_per_instance')
+    print(time_total_per_instance)
+    print('time_next_make_generation')
+    print(time_next_make_generation)
+    print('time_evaluation')
+    print(time_evaluation)
+    print('time_test')
+    print(time_test)
+    print('time_total')
+    time_total = time.time() - start
+    print(time_total)
+    print(evaluations)
+    print('time_total_per_instance for every loop:')
+    print(np.sum(time_total_per_instance, axis=1) + time_test)
+    print('total time:')
+    print(time_total)
+    print('Total time - final evaluations in loop')
+    print(np.sum(np.sum(time_total_per_instance, axis=1)))
+    print('total instance mean')
+    print(np.mean(np.sum(time_total_per_instance, axis=0)))
+    print(np.median(np.sum(time_total_per_instance, axis=0)))
+    print('next generation make time:')
+    print(np.sum(time_next_make_generation))
+    print(np.sum(time_next_make_generation, axis=1))
+    print('evaluation(code generation and running test cases)')
+    print(np.sum(time_evaluation))
+    print(np.sum(time_evaluation, axis=1))
+
+
 def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0):
     all_generated_promts = []
     # all_generated_promts = []
@@ -417,19 +451,8 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
                                  human_eval, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
                                  time_test)
         ## evaluations
-    print('number_of_supposed_passed_codes')
-    print(number_of_supposed_passed_codes)
-    print('time_total_per_instance')
-    print(time_total_per_instance)
-    print('time_next_make_generation')
-    print(time_next_make_generation)
-    print('time_evaluation')
-    print(time_evaluation)
-    print('time_test')
-    print(time_test)
-    print('time_total')
-    print(time.time() - start)
-    print(evaluations)
+    print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation, time_next_make_generation,
+                        time_test, time_total_per_instance)
 
 
 def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0):
@@ -538,16 +561,5 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
                                  human_eval, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
                                  time_test)
         ## evaluations
-    print('number_of_supposed_passed_codes')
-    print(number_of_supposed_passed_codes)
-    print('time_total_per_instance')
-    print(time_total_per_instance)
-    print('time_next_make_generation')
-    print(time_next_make_generation)
-    print('time_evaluation')
-    print(time_evaluation)
-    print('time_test')
-    print(time_test)
-    print('time_total')
-    print(time.time() - start)
-    print(evaluations)
+    print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation, time_next_make_generation,
+                        time_test, time_total_per_instance)
