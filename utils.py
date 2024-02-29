@@ -14,7 +14,7 @@ from multiprocessing import Pool
 from itertools import repeat
 from itertools import product
 from gensimutils import provide_alternate_sentence
-max_response_length = 2500
+max_response_length = 6000
 def f(a_test, candidates):
     print(a_test)
     print(candidates)
