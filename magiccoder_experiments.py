@@ -50,7 +50,7 @@ class MagicCoderRunner:
                 base_prompts_re_codemagic.append(base_prompts)
         return base_prompts_re_codemagic
 
-    def run_experiment(self):
+    def run_experiment_llama70(self):
         import os
         os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
         magic_coder = self.load_magiccoder()
@@ -62,7 +62,22 @@ class MagicCoderRunner:
         generated_testcases = get_testcases()
         run_genetic_algorithm(base_prompts_re=base_prompts_re_codemagic, codeLLama_tokenizer=None, codeLLama_model=None,
                               magic_coder=magic_coder, final_test_cases=final_test_cases,
-                              generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164, model_to_test=1)
+                              generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164, model_to_test=1, mutation_llm=1)
+
+    def run_experiment_llama7(self):
+        import os
+        os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
+        magic_coder = self.load_magiccoder()
+        gpt_prompts = get_initial_population_from_chat_gpt()
+        human_eval_loader = HumanEvalLoader()
+        human_eval = human_eval_loader.get_human_eval()
+        final_test_cases = human_eval_loader.get_final_test_cases()
+        base_prompts_re_codemagic = self.get_first_population(gpt_prompts, human_eval)
+        generated_testcases = get_testcases()
+        run_genetic_algorithm(base_prompts_re=base_prompts_re_codemagic, codeLLama_tokenizer=None, codeLLama_model=None,
+                              magic_coder=magic_coder, final_test_cases=final_test_cases,
+                              generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164, model_to_test=1, mutation_llm=2)
+
 
     def run_experiments_gensim(self):
         import os

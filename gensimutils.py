@@ -1,4 +1,6 @@
 import random
+import time
+
 import nltk
 from nltk.corpus import wordnet
 from nltk.corpus import stopwords
@@ -293,6 +295,7 @@ def refactor_prompt(prompt):
 
 def produce_first_generation():
     from datasets import load_dataset
+    a = time.time()
     human_eval = load_dataset("openai_humaneval")
     human_eval_processed = []
     special_token = '"""#SPECIAL_TOKEN'
@@ -311,8 +314,8 @@ def produce_first_generation():
     ignore_refactor = [10, 32, 38, 50, 64]
     first_generation_prompts_refactored = []
     for index, a_test in enumerate(human_eval_processed):
-        print(index)
-        print(a_test)
+        # print(index)
+        # print(a_test)
         if index not in ignore_refactor:
             added_text = refactor_prompt(a_test)
         splits = a_test.split(special_token)
@@ -329,5 +332,6 @@ def produce_first_generation():
                 zip(alternate_sentences1, alternate_sentences2)]
         final_list = [a_test] + final_sentence
         first_generation_prompts_refactored.append(final_list)
-
+    print('total time')
+    print(time.time() - a)
     print(first_generation_prompts_refactored)

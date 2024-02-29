@@ -1,4 +1,6 @@
+import time
 def generate_first_population_openai():
+    a = time.time()
     from evaluate import load
     code_eval_metric = load("code_eval")
     from datasets import load_dataset
@@ -6,7 +8,6 @@ def generate_first_population_openai():
     from tqdm import tqdm
     code_eval_metric = load("code_eval")
     human_eval = load_dataset("openai_humaneval")
-    import time
     from openai import OpenAI
 
     key = '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'
@@ -14,7 +15,7 @@ def generate_first_population_openai():
     gpt4_prompts = []
     for instance in tqdm(human_eval['test']):
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4-1106-preview",
             messages=[{"role": "user",
                        "content": "Refine the given prompt by enhancing its description to ensure clarity and comprehension for sophisticated language models. Maintain the original structure while elaborating on the details and ensuring it's easily understandable for advanced AI models.\n" +
                                   instance['prompt']}],
@@ -30,13 +31,14 @@ def generate_first_population_openai():
         gpt_prompts_list.append([an_item.message.content for an_item in ins])
 
     print(gpt_prompts_list)
+    print('total time:', time.time() - a)
 
 def produce_testcases():
+    time1 = time.time()
     from evaluate import load
     code_eval_metric = load("code_eval")
     from datasets import load_dataset
     human_eval = load_dataset("openai_humaneval")
-    import time
     from openai import OpenAI
     from tqdm import tqdm
     key = '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'
@@ -70,3 +72,5 @@ def produce_testcases():
         # print(tests)
         # break
     print(processed_test_cases)
+    print('total time')
+    print(time.time() - time1)

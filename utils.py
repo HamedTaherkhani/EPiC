@@ -5,6 +5,11 @@ from evaluate import load
 import time
 import random
 import numpy as np
+# import torch
+MUtation_llm = {
+    1: 'Lama70b',
+    2: 'Lama7b'
+}
 from multiprocessing import Pool
 from itertools import repeat
 from itertools import product
@@ -100,18 +105,23 @@ headers = {
 }
 
 
-def mutate_prompts_api(a_candidate):
+def mutate_prompts_api(a_candidate, mutation_llm):
     query2 = "Here is a python function and it's description. Please Refine and elaborate the description by enhancing it's clarity and comprehension for sophisticated language models. Please put the refined description between #Explanation and #End. \\n"
     url = "https://www.llama2.ai/api"
     prompt_changed = a_candidate.replace('\n', '\\n').replace("\"", '\\"')
-    payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-70b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.75,\"topP\":0.9,\"maxTokens\":300,\"image\":null,\"audio\":null}"
+    if mutation_llm == 1:
+        payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-70b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.75,\"topP\":0.9,\"maxTokens\":300,\"image\":null,\"audio\":null}"
+    elif mutation_llm == 2:
+        payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-7b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.75,\"topP\":0.9,\"maxTokens\":300,\"image\":null,\"audio\":null}"
+    else:
+        raise Exception('Invalid mutation_llm')
     payload = payload.replace("Hello", query2 + prompt_changed)
 
     response = requests.request("POST", url, headers=headers, data=payload).text
     return process_prompt2(response, a_candidate)
 
 
-def crossover_prompts_api(cands):
+def crossover_prompts_api(cands, mutation_llm):
     two_candidates = choose_candidates(cands, 2)
     first_temp = [m.start() for m in re.finditer(special_token, two_candidates[0])]
     if len(first_temp) == 0:
@@ -136,7 +146,10 @@ def crossover_prompts_api(cands):
                                                                                               second_temp[1]]
     url = "https://www.llama2.ai/api"
     prompt_changed = PROMPT.replace('\n', '\\n').replace("\"", '\\"')
-    payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-70b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.75,\"topP\":0.9,\"maxTokens\":300,\"image\":null,\"audio\":null}"
+    if mutation_llm == 1:
+        payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-70b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.75,\"topP\":0.9,\"maxTokens\":300,\"image\":null,\"audio\":null}"
+    elif mutation_llm == 2:
+        payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-7b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.75,\"topP\":0.9,\"maxTokens\":300,\"image\":null,\"audio\":null}"
     payload = payload.replace("Hello", prompt_changed)
     response = requests.request("POST", url, headers=headers, data=payload).text
     return process_api_prompt(response, two_candidates[0])
@@ -352,7 +365,7 @@ def print_time_measures(evaluations, number_of_supposed_passed_codes, start, tim
     print(np.sum(time_evaluation, axis=1))
 
 
-def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0):
+def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0, mutation_llm=1):
     all_generated_promts = []
     # all_generated_promts = []
     evaluations = []
@@ -374,6 +387,7 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
     passed_codes = [False for i in range(number_of_tests)]
     start = time.time()
     for iteration in tqdm(range(iterations)):
+        # torch.cuda.mem_get_info()
         time_total_per_instance.append([])
         time_evaluation.append([])
         time_next_make_generation.append([])
@@ -427,18 +441,18 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
                 ## mutation
                 selected_candidates_for_mutations = choose_candidates(candidates.copy(), number_of_generations_by_mutations)
                 for a_candidate in selected_candidates_for_mutations:
-                    llama_prompts_final = mutate_prompts_api(a_candidate)
+                    llama_prompts_final = mutate_prompts_api(a_candidate, mutation_llm)
                     # time.sleep(3)
                     next_generation_prompts.append(llama_prompts_final)
                 ##crossover
                 for j in range(number_of_generations_by_crossover):
-                    llama_prompts_final = crossover_prompts_api(candidates.copy())
+                    llama_prompts_final = crossover_prompts_api(candidates.copy(), mutation_llm)
                     # time.sleep(3)
                     next_generation_prompts.append(llama_prompts_final)
                 ## straight select
                 next_generation_prompts.extend(choose_candidates(candidates.copy(), straight_of_generations_by_mutations))
-                # print(f'nexxxxxxxxxxxxxxxxxxxxxxxxxx for {idx}')
-                # print(next_generation_prompts)
+                print(f'second nexxxxxxxxxxxxxxxxxxxxxxxxxx for {idx}')
+                print(next_generation_prompts[1])
                 base_prompts_re[idx] = next_generation_prompts
 
             d = time.time()
