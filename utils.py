@@ -465,6 +465,10 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
                                  human_eval, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
                                  time_test)
         ## evaluations
+        print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation,
+                            time_next_make_generation,
+                            time_test, time_total_per_instance)
+
     print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation, time_next_make_generation,
                         time_test, time_total_per_instance)
 
