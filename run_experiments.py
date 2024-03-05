@@ -14,22 +14,24 @@ experiments = {
     6: 'baseline-codellama',
     7: 'genetic-magicoder-llama2-7b'
 }
-experiment_id = int(os.getenv('experiment'))
-experiment_to_run = experiments[experiment_id]
-print(f'Running experiment: {experiment_to_run}')
-if experiment_id == 1:
-    MagicCoderRunner().run_experiment_llama70()
-elif experiment_id == 2:
-    CodellamaExperiments().run_experiment()
-elif experiment_id == 3:
-    MagicCoderRunner().run_experiments_gensim()
-elif experiment_id == 4:
-    CodellamaExperiments().run_experiments_gensim()
-elif experiment_id == 5:
-    pass
-elif experiment_id == 6:
-    pass
-elif experiment_id == 7:
-    MagicCoderRunner().run_experiment_llama7()
-else:
-    print("Invalid experiment")
+print(__name__)
+if __name__ == '__main__':
+    experiment_id = int(os.getenv('experiment'))
+    experiment_to_run = experiments[experiment_id]
+    print(f'Running experiment: {experiment_to_run}')
+    if experiment_id == 1:
+        MagicCoderRunner().run_experiment_llama70()
+    elif experiment_id == 2:
+        CodellamaExperiments().run_experiment()
+    elif experiment_id == 3:
+        MagicCoderRunner().run_experiments_gensim()
+    elif experiment_id == 4:
+        CodellamaExperiments().run_experiments_gensim()
+    elif experiment_id == 5:
+        pass
+    elif experiment_id == 6:
+        pass
+    elif experiment_id == 7:
+        MagicCoderRunner().run_experiment_llama7()
+    else:
+        print("Invalid experiment")

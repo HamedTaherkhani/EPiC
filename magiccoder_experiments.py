@@ -1,6 +1,6 @@
 from transformers import pipeline
 import torch
-from chat_gpt_prompts import get_initial_population_from_chat_gpt
+from chat_gpt_prompts import get_initial_processed_gpt_prompts
 from gensim_prompts import get_gensim_prompts
 from humaneval_loader import HumanEvalLoader
 from chat_gpt_generated_testcases import get_testcases
@@ -54,7 +54,7 @@ class MagicCoderRunner:
         import os
         os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
         magic_coder = self.load_magiccoder()
-        gpt_prompts = get_initial_population_from_chat_gpt()
+        gpt_prompts = get_initial_processed_gpt_prompts()
         human_eval_loader = HumanEvalLoader()
         human_eval = human_eval_loader.get_human_eval()
         final_test_cases = human_eval_loader.get_final_test_cases()
@@ -68,7 +68,7 @@ class MagicCoderRunner:
         import os
         os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
         magic_coder = self.load_magiccoder()
-        gpt_prompts = get_initial_population_from_chat_gpt()
+        gpt_prompts = get_initial_processed_gpt_prompts()
         human_eval_loader = HumanEvalLoader()
         human_eval = human_eval_loader.get_human_eval()
         final_test_cases = human_eval_loader.get_final_test_cases()

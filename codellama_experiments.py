@@ -1,6 +1,6 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 import torch
-from chat_gpt_prompts import get_initial_population_from_chat_gpt
+from chat_gpt_prompts import get_initial_processed_gpt_prompts
 from humaneval_loader import HumanEvalLoader
 from chat_gpt_generated_testcases import get_testcases
 from utils import run_genetic_algorithm, run_genetic_algorithm_gensim
@@ -110,7 +110,7 @@ class CodellamaExperiments:
     def run_experiment(self):
 
         codeLLama_tokenizer, codeLLama_model = self.load_codellama()
-        gpt_prompts = get_initial_population_from_chat_gpt()
+        gpt_prompts = get_initial_processed_gpt_prompts()
         human_eval_loader = HumanEvalLoader()
         human_eval = human_eval_loader.get_human_eval()
         final_test_cases = human_eval_loader.get_final_test_cases()
