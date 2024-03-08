@@ -50,7 +50,7 @@ class MagicCoderRunner:
                 base_prompts_re_codemagic.append(base_prompts)
         return base_prompts_re_codemagic
 
-    def run_experiment_llama70(self):
+    def run_experiment_llama70(self, instances=None):
         import os
         os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
         magic_coder = self.load_magiccoder()
@@ -64,7 +64,7 @@ class MagicCoderRunner:
                               magic_coder=magic_coder, final_test_cases=final_test_cases,
                               generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164, model_to_test=1, mutation_llm=1)
 
-    def run_experiment_llama7(self):
+    def run_experiment_llama7(self, instances=None):
         import os
         os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
         magic_coder = self.load_magiccoder()
@@ -79,7 +79,7 @@ class MagicCoderRunner:
                               generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164, model_to_test=1, mutation_llm=2)
 
 
-    def run_experiments_gensim(self):
+    def run_experiments_gensim(self, instances=None):
         import os
         os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
         magic_coder = self.load_magiccoder()

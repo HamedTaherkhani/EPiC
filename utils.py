@@ -5,7 +5,8 @@ from evaluate import load
 import time
 import random
 import numpy as np
-# import torch
+import torch
+
 MUtation_llm = {
     1: 'Lama70b',
     2: 'Lama7b'
@@ -94,7 +95,7 @@ def process_api_prompt(res, a_candidate):
         exp.append(-1)
     elif len(exp) == 0:
         exp = [0, -1]
-    final_prompt = a_candidate.replace(a_candidate[exp[0] + 17: exp[1]], res)
+    final_prompt = a_candidate.replace(a_candidate[exp[0] + 17: exp[1] - 3], res)
     return final_prompt
 
 
@@ -110,15 +111,15 @@ def mutate_prompts_api(a_candidate, mutation_llm):
     url = "https://www.llama2.ai/api"
     prompt_changed = a_candidate.replace('\n', '\\n').replace("\"", '\\"')
     if mutation_llm == 1:
-        payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-70b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.75,\"topP\":0.9,\"maxTokens\":300,\"image\":null,\"audio\":null}"
+        payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-70b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.5,\"topP\":0.9,\"maxTokens\":1000,\"image\":null,\"audio\":null}"
     elif mutation_llm == 2:
-        payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-7b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.75,\"topP\":0.9,\"maxTokens\":300,\"image\":null,\"audio\":null}"
+        payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-7b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.5,\"topP\":0.9,\"maxTokens\":1000,\"image\":null,\"audio\":null}"
     else:
         raise Exception('Invalid mutation_llm')
     payload = payload.replace("Hello", query2 + prompt_changed)
 
     response = requests.request("POST", url, headers=headers, data=payload).text
-    return process_prompt2(response, a_candidate)
+    return process_api_prompt(response, a_candidate)
 
 
 def crossover_prompts_api(cands, mutation_llm):
@@ -147,9 +148,9 @@ def crossover_prompts_api(cands, mutation_llm):
     url = "https://www.llama2.ai/api"
     prompt_changed = PROMPT.replace('\n', '\\n').replace("\"", '\\"')
     if mutation_llm == 1:
-        payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-70b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.75,\"topP\":0.9,\"maxTokens\":300,\"image\":null,\"audio\":null}"
+        payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-70b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.5,\"topP\":0.9,\"maxTokens\":1000,\"image\":null,\"audio\":null}"
     elif mutation_llm == 2:
-        payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-7b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.75,\"topP\":0.9,\"maxTokens\":300,\"image\":null,\"audio\":null}"
+        payload = "{\"prompt\":\"[INST]Hello [/INST]\\n\",\"model\":\"meta/llama-2-7b-chat\",\"systemPrompt\":\"You are a helpful assistant.\",\"temperature\":0.5,\"topP\":0.9,\"maxTokens\":1000,\"image\":null,\"audio\":null}"
     payload = payload.replace("Hello", prompt_changed)
     response = requests.request("POST", url, headers=headers, data=payload).text
     return process_api_prompt(response, two_candidates[0])
@@ -387,7 +388,8 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
     passed_codes = [False for i in range(number_of_tests)]
     start = time.time()
     for iteration in tqdm(range(iterations)):
-        # torch.cuda.mem_get_info()
+        torch.cuda.empty_cache()
+        print(torch.cuda.memory_summary())
         time_total_per_instance.append([])
         time_evaluation.append([])
         time_next_make_generation.append([])

@@ -1,4 +1,5 @@
 import os
+import json
 os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
 from magiccoder_experiments import MagicCoderRunner
 from dotenv import load_dotenv
@@ -17,21 +18,23 @@ experiments = {
 print(__name__)
 if __name__ == '__main__':
     experiment_id = int(os.getenv('experiment'))
+    human_eval_instances = json.loads(os.getenv('human_eval_instances'))
+    print(human_eval_instances)
     experiment_to_run = experiments[experiment_id]
     print(f'Running experiment: {experiment_to_run}')
     if experiment_id == 1:
-        MagicCoderRunner().run_experiment_llama70()
+        MagicCoderRunner().run_experiment_llama70(human_eval_instances)
     elif experiment_id == 2:
-        CodellamaExperiments().run_experiment()
+        CodellamaExperiments().run_experiment(human_eval_instances)
     elif experiment_id == 3:
-        MagicCoderRunner().run_experiments_gensim()
+        MagicCoderRunner().run_experiments_gensim(human_eval_instances)
     elif experiment_id == 4:
-        CodellamaExperiments().run_experiments_gensim()
+        CodellamaExperiments().run_experiments_gensim(human_eval_instances)
     elif experiment_id == 5:
         pass
     elif experiment_id == 6:
         pass
     elif experiment_id == 7:
-        MagicCoderRunner().run_experiment_llama7()
+        MagicCoderRunner().run_experiment_llama7(human_eval_instances)
     else:
         print("Invalid experiment")
