@@ -98,6 +98,11 @@ class MagicCoderRunner:
         human_eval = human_eval_loader.get_human_eval()
         final_test_cases = human_eval_loader.get_final_test_cases()
         generated_testcases = get_testcases()
+        if instances is not None:
+            if len(instances) != 0:
+                final_test_cases = [final_test_cases[i] for i in instances]
+                first_generation_prompts_refactored = [first_generation_prompts_refactored[i] for i in instances]
+                generated_testcases = [generated_testcases[i] for i in instances]
         run_genetic_algorithm_gensim(base_prompts_re=first_generation_prompts_refactored, codeLLama_tokenizer=None, codeLLama_model=None,
                               magic_coder=magic_coder, final_test_cases=final_test_cases,
                               generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164,
