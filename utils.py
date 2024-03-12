@@ -176,7 +176,7 @@ def crossover_and_return_candidate(cands, generate_text):
 
 
 def validate_prompt(prompt):
-    if 'def' in prompt:
+    if 'def' in prompt and len(list(prompt.split(' '))) < max_response_length:
         return True
     return False
 
@@ -251,6 +251,9 @@ def evaluate_prompt(test_cases, prompt, codeLLama_tokenizer, codeLLama_model, ma
 
 def evaluate_prompt_on_generated_prompts(test_cases, prompt, codeLLama_tokenizer, codeLLama_model, magic_coder, human_eval,
                                          model_to_test=0, prompt_index=None):
+    if not validate_prompt(
+            prompt):
+        return 0
     if model_to_test == 0:
         prompt = codeLLama_tokenizer(prompt.replace('#SPECIAL_TOKEN', ''), return_tensors="pt")["input_ids"].to(
             'cuda:0')
@@ -311,6 +314,11 @@ def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, e
         elif model_to_test == 1:
             fillings = []
             for index, a_token in tqdm(enumerate(chosen_prompts)):
+                if not validate_prompt(
+                        a_token):  ##this is because codeLLama_model has no max_new_tokens set and generates infinite output
+                    filling = 'teeeeeeeeeeeeeeeeest'
+                    fillings.append([filling])
+                    continue
                 if not passed_codes[index]:
                     filling = magic_coder(a_token.replace('#SPECIAL_TOKEN', ''), max_length=800, num_return_sequences=1,
                                           temperature=0.0)[0]['generated_text']
@@ -453,8 +461,8 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
                     next_generation_prompts.append(llama_prompts_final)
                 ## straight select
                 next_generation_prompts.extend(choose_candidates(candidates.copy(), straight_of_generations_by_mutations))
-                print(f'second nexxxxxxxxxxxxxxxxxxxxxxxxxx for {idx}')
-                print(next_generation_prompts[1])
+                # print(f'second nexxxxxxxxxxxxxxxxxxxxxxxxxx for {idx}')
+                # print(next_generation_prompts[1])
                 base_prompts_re[idx] = next_generation_prompts
 
             d = time.time()

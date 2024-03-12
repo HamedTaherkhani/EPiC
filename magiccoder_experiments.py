@@ -60,6 +60,11 @@ class MagicCoderRunner:
         final_test_cases = human_eval_loader.get_final_test_cases()
         base_prompts_re_codemagic = self.get_first_population(gpt_prompts, human_eval)
         generated_testcases = get_testcases()
+        if instances is not None:
+            if len(instances) != 0:
+                final_test_cases = [final_test_cases[i] for i in instances]
+                base_prompts_re_codemagic = [base_prompts_re_codemagic[i] for i in instances]
+                generated_testcases = [generated_testcases[i] for i in instances]
         run_genetic_algorithm(base_prompts_re=base_prompts_re_codemagic, codeLLama_tokenizer=None, codeLLama_model=None,
                               magic_coder=magic_coder, final_test_cases=final_test_cases,
                               generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164, model_to_test=1, mutation_llm=1)
@@ -74,6 +79,11 @@ class MagicCoderRunner:
         final_test_cases = human_eval_loader.get_final_test_cases()
         base_prompts_re_codemagic = self.get_first_population(gpt_prompts, human_eval)
         generated_testcases = get_testcases()
+        if instances is not None:
+            if len(instances) != 0:
+                final_test_cases = [final_test_cases[i] for i in instances]
+                base_prompts_re_codemagic = [base_prompts_re_codemagic[i] for i in instances]
+                generated_testcases = [generated_testcases[i] for i in instances]
         run_genetic_algorithm(base_prompts_re=base_prompts_re_codemagic, codeLLama_tokenizer=None, codeLLama_model=None,
                               magic_coder=magic_coder, final_test_cases=final_test_cases,
                               generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164, model_to_test=1, mutation_llm=2)
