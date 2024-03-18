@@ -27,7 +27,7 @@ if __name__ == '__main__':
     elif experiment_id == 2:
         CodellamaExperiments().run_experiment(human_eval_instances)
     elif experiment_id == 3:
-        MagicCoderRunner().run_experiments_gensim(human_eval_instances)
+        MagicCoderRunner().run_experiments_gensim(instances=human_eval_instances, first_generation_openai=True)
     elif experiment_id == 4:
         CodellamaExperiments().run_experiments_gensim(human_eval_instances)
     elif experiment_id == 5:
