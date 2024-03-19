@@ -105,6 +105,7 @@ class MagicCoderRunner:
         human_eval = human_eval_loader.get_human_eval()
         final_test_cases = human_eval_loader.get_final_test_cases()
         generated_testcases = get_testcases()
+        first_generation_prompts_refactored = self.get_first_population(gpt_prompts=first_generation_prompts_refactored, human_eval=human_eval)
         if instances is not None:
             if len(instances) != 0:
                 final_test_cases = [final_test_cases[i] for i in instances]
