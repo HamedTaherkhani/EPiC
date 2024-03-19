@@ -249,7 +249,7 @@ def evaluate_prompt(test_cases, prompt, codeLLama_tokenizer, codeLLama_model, ma
     return pass_at_k['pass@1']
 
 
-def evaluate_prompt_on_generated_prompts(test_cases, prompt, codeLLama_tokenizer, codeLLama_model, magic_coder, human_eval,
+def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama_tokenizer, codeLLama_model, magic_coder, human_eval, original_test_cases, with_original_testcases=False,
                                          model_to_test=0, prompt_index=None):
     if not validate_prompt(
             prompt):
@@ -276,10 +276,14 @@ def evaluate_prompt_on_generated_prompts(test_cases, prompt, codeLLama_tokenizer
     candidates = [candidate]
 
     pass_total = 0
-    for a_test in test_cases:
-        pass_at_k, results = code_eval_metric.compute(references=[a_test], predictions=candidates, k=[1])
-        pass_total += pass_at_k['pass@1']
-    return pass_total / len(test_cases)
+    if not with_original_testcases:
+        for a_test in generated_test_cases:
+            pass_at_k, results = code_eval_metric.compute(references=[a_test], predictions=candidates, k=[1])
+            pass_total += pass_at_k['pass@1']
+        return pass_total / len(generated_test_cases)
+    else:
+        pass_at_k, results = code_eval_metric.compute(references=[original_test_cases], predictions=candidates, k=[1])
+        return pass_at_k['pass@1']
 
     # with Pool() as p:
     #     results = p.starmap(f, zip(test_cases, repeat(candidates)))
@@ -420,13 +424,15 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
                 a = time.time()
                 for single_prompt in a_prompt_set:
                     passed = False
-                    passat10 = evaluate_prompt_on_generated_prompts(test_cases=generated_testcases[idx][0:4],
+                    passat10 = evaluate_prompt_on_generated_prompts(generated_test_cases=generated_testcases[idx][0:4],
                                                                     prompt=single_prompt, model_to_test=model_to_test,
                                                                     prompt_index=idx,
                                                                     codeLLama_tokenizer=codeLLama_tokenizer,
                                                                     codeLLama_model=codeLLama_model,
                                                                     magic_coder=magic_coder,
-                                                                    human_eval=human_eval)
+                                                                    human_eval=human_eval,
+                                                                    original_test_cases=final_test_cases[idx],
+                                                                    with_original_testcases=False)
 
                     candidates.append([single_prompt, passat10])
                     if passat10 == 1:
@@ -483,7 +489,7 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
                         time_test, time_total_per_instance)
 
 
-def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0):
+def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0, with_original_testcases=False):
 
     all_generated_promts = []
     # all_generated_promts = []
@@ -528,13 +534,15 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
                 a = time.time()
                 for single_prompt in a_prompt_set:
                     passed = False
-                    passat10 = evaluate_prompt_on_generated_prompts(test_cases=generated_testcases[idx][0:3],
+                    passat10 = evaluate_prompt_on_generated_prompts(generated_test_cases=generated_testcases[idx][0:4],
                                                                     prompt=single_prompt, model_to_test=model_to_test,
                                                                     prompt_index=idx,
                                                                     codeLLama_tokenizer=codeLLama_tokenizer,
                                                                     codeLLama_model=codeLLama_model,
                                                                     magic_coder=magic_coder,
-                                                                    human_eval=human_eval)
+                                                                    human_eval=human_eval,
+                                                                    original_test_cases=final_test_cases[idx],
+                                                                    with_original_testcases=with_original_testcases)
 
                     candidates.append([single_prompt, passat10])
                     if passat10 == 1:

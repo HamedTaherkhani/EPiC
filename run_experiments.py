@@ -10,10 +10,11 @@ experiments = {
     1: 'genetic-magiccoder-llama2-70b',
     2: 'genetic-codellama-llama2-70b',
     3: 'genetic-magiccoder-gensim',
-    4: 'genetic-codellama-gensim',
-    5: 'baseline-magicoder',
-    6: 'baseline-codellama',
-    7: 'genetic-magicoder-llama2-7b'
+    4: 'genetic-magiccoder-gensim-original-testcases',
+    5: 'genetic-codellama-gensim',
+    6: 'baseline-magicoder',
+    7: 'baseline-codellama',
+    8: 'genetic-magicoder-llama2-7b'
 }
 print(__name__)
 if __name__ == '__main__':
@@ -27,14 +28,16 @@ if __name__ == '__main__':
     elif experiment_id == 2:
         CodellamaExperiments().run_experiment(human_eval_instances)
     elif experiment_id == 3:
-        MagicCoderRunner().run_experiments_gensim(instances=human_eval_instances, first_generation_openai=True)
+        MagicCoderRunner().run_experiments_gensim(instances=human_eval_instances, first_generation_openai=True, with_original_testcases=False)
     elif experiment_id == 4:
-        CodellamaExperiments().run_experiments_gensim(human_eval_instances)
+        MagicCoderRunner().run_experiments_gensim(instances=human_eval_instances, first_generation_openai=True, with_original_testcases=True)
     elif experiment_id == 5:
-        pass
+        CodellamaExperiments().run_experiments_gensim(human_eval_instances)
     elif experiment_id == 6:
         pass
     elif experiment_id == 7:
+        pass
+    elif experiment_id == 8:
         MagicCoderRunner().run_experiment_llama7(human_eval_instances)
     else:
         print("Invalid experiment")
