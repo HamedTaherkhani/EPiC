@@ -822,9 +822,9 @@ def get_gpt_prompts_distilled():
     return gpt_distilled_prompts_re2
 
 
-def get_initial_processed_gpt_prompts_distilled():
+def refactor_prompts(gpt_prompts):
     ### process gpt_prompts
-    gpt_prompts = get_gpt_prompts_distilled()
+    # gpt_prompts = get_gpt_prompts_distilled()
     special_token = '"""#SPECIAL_TOKEN'
     import re
     for index1, j in enumerate(gpt_prompts):

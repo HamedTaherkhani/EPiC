@@ -1,7 +1,7 @@
 from transformers import pipeline
 import torch
 from chat_gpt_prompts import get_initial_processed_gpt_prompts
-from chat_gpt_prompts_distilled import get_initial_processed_gpt_prompts_distilled
+from chat_gpt_prompts_distilled import refactor_prompts,get_gpt_prompts_distilled
 from gensim_prompts import get_gensim_prompts
 from humaneval_loader import HumanEvalLoader
 from chat_gpt_generated_testcases import get_testcases
@@ -96,22 +96,25 @@ class MagicCoderRunner:
         import os
         os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
         magic_coder = self.load_magiccoder()
-        if first_generation_openai:
-            first_generation_prompts_refactored = get_initial_processed_gpt_prompts_distilled()
-            print(first_generation_prompts_refactored)
-        else:
-            first_generation_prompts_refactored = get_gensim_prompts()
         human_eval_loader = HumanEvalLoader()
         human_eval = human_eval_loader.get_human_eval()
         final_test_cases = human_eval_loader.get_final_test_cases()
         generated_testcases = get_testcases()
-        first_generation_prompts_refactored = self.get_first_population(gpt_prompts=first_generation_prompts_refactored, human_eval=human_eval)
+
+        if first_generation_openai:
+            first_generation_prompts_refactored = self.get_first_population(get_gpt_prompts_distilled(), human_eval)
+            first_generation_prompts_refactored = refactor_prompts(first_generation_prompts_refactored)
+        else:
+            first_generation_prompts_refactored = get_gensim_prompts()
+
         if instances is not None:
             if len(instances) != 0:
                 final_test_cases = [final_test_cases[i] for i in instances]
                 first_generation_prompts_refactored = [first_generation_prompts_refactored[i] for i in instances]
                 generated_testcases = [generated_testcases[i] for i in instances]
-        run_genetic_algorithm_gensim(base_prompts_re=first_generation_prompts_refactored, codeLLama_tokenizer=None, codeLLama_model=None,
-                              magic_coder=magic_coder, final_test_cases=final_test_cases,
-                              generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164,
-                              model_to_test=1, with_original_testcases=with_original_testcases)
+        run_genetic_algorithm_gensim(base_prompts_re=first_generation_prompts_refactored, codeLLama_tokenizer=None,
+                                     codeLLama_model=None,
+                                     magic_coder=magic_coder, final_test_cases=final_test_cases,
+                                     generated_testcases=generated_testcases, human_eval=human_eval,
+                                     number_of_tests=164,
+                                     model_to_test=1, with_original_testcases=with_original_testcases)
