@@ -51,7 +51,10 @@ class MagicCoderRunner:
         #         base_prompts_re_codemagic.append(base_prompts)
         base_prompts_re_codemagic = []
         for idx, base_prompts in enumerate(gpt_prompts):
-            base_prompts_re_codemagic.append([human_eval['test'][idx]['prompt']].extend(base_prompts[0:3]))
+            a = base_prompts[0:4]
+            b = [human_eval['test'][idx]['prompt']]
+            b.extend(a)
+            base_prompts_re_codemagic.append(b)
         return base_prompts_re_codemagic
 
     def run_experiment_llama70(self, instances=None):

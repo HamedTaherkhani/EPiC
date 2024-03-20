@@ -148,6 +148,12 @@ class CodellamaExperiments:
         else:
             first_generation_prompts_refactored = get_gensim_prompts()
 
+        if instances is not None:
+            if len(instances) != 0:
+                final_test_cases = [final_test_cases[i] for i in instances]
+                first_generation_prompts_refactored = [first_generation_prompts_refactored[i] for i in instances]
+                generated_testcases = [generated_testcases[i] for i in instances]
+
         run_genetic_algorithm_gensim(base_prompts_re=first_generation_prompts_refactored,
                                      codeLLama_tokenizer=codeLLama_tokenizer,
                                      codeLLama_model=codeLLama_model,

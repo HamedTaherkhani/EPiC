@@ -488,6 +488,14 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
     print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation, time_next_make_generation,
                         time_test, time_total_per_instance)
 
+def stop_criteria_met(evaluations):
+    if len(evaluations) < 4:
+        return False
+    if evaluations[-1][0]['pass@1'] <= evaluations[-2][0]['pass@1']:
+        return True
+    else:
+        return False
+
 
 def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0, with_original_testcases=False):
 
@@ -498,7 +506,7 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     import warnings
     warnings.filterwarnings("ignore")
-    iterations = 4
+    iteration = 0
     run_evaluation_each_generation = True
     ## time management
     time_total_per_instance = []
@@ -511,7 +519,7 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
 
     passed_codes = [False for i in range(number_of_tests)]
     start = time.time()
-    for iteration in tqdm(range(iterations)):
+    while(not stop_criteria_met(evaluations)):
         time_total_per_instance.append([])
         time_evaluation.append([])
         time_next_make_generation.append([])
@@ -597,5 +605,7 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
                                  human_eval, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
                                  time_test)
         ## evaluations
+        iteration += 1
+    print(base_prompts_re)
     print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation, time_next_make_generation,
                         time_test, time_total_per_instance)

@@ -835,7 +835,7 @@ def refactor_prompts(gpt_prompts):
             if len(exp) == 1:
                 gpt_prompts[index1][index2] += special_token
             exp = [m.start() for m in re.finditer(special_token, gpt_prompts[index1][index2])]
-            if len(exp) != 2 or len(exp) != 4:
-                print(index1, index2, len(exp))
+            # if len(exp) != 2 or len(exp) != 4:
+            #     print(index1, index2, len(exp))
 
     return gpt_prompts
