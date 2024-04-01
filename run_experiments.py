@@ -1,7 +1,8 @@
 import os
 import json
-os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
+# os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
 from magiccoder_experiments import MagicCoderRunner
+from gpt_experiments import GPTRunner
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,7 +15,8 @@ experiments = {
     5: 'genetic-codellama-gensim',
     6: 'baseline-magicoder',
     7: 'baseline-codellama',
-    8: 'genetic-magicoder-llama2-7b'
+    8: 'genetic-magicoder-llama2-7b',
+    9: 'genetic-gpt4-gensim-original-testcases'
 }
 print(__name__)
 if __name__ == '__main__':
@@ -39,5 +41,7 @@ if __name__ == '__main__':
         pass
     elif experiment_id == 8:
         MagicCoderRunner().run_experiment_llama7(human_eval_instances)
+    elif experiment_id == 9:
+        GPTRunner().run_experiment_gensim(first_generation_openai=True, instances=human_eval_instances, with_original_testcases=True)
     else:
         print("Invalid experiment")

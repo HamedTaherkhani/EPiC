@@ -249,8 +249,27 @@ def evaluate_prompt(test_cases, prompt, codeLLama_tokenizer, codeLLama_model, ma
     return pass_at_k['pass@1']
 
 
+def get_gpt_code_completion(gpt_client, prompt):
+    response = gpt_client.chat.completions.create(model='gpt-4',
+                                                  messages=[{"role": "system",
+                                                             "content": "You are a python developer that implements the correct code based on the function description provided. You are given one or more functions to implement. Don't delete import statements in the code snippet. Use at most 1500 words."},
+                                                            {"role": "user",
+                                                             "content": prompt.replace(
+                                                                 "#SPECIAL_TOKEN", "")}],
+                                                  temperature=0,
+                                                  max_tokens=1600,
+                                                  )
+    filling = response.choices[0].message.content
+    ##process
+    try:
+        filling = prompt + '\n' + filling.split('```')[1].replace('python', '')
+    except IndexError:
+        filling = prompt
+    ###
+    return filling
+
 def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama_tokenizer, codeLLama_model, magic_coder, human_eval, original_test_cases, with_original_testcases=False,
-                                         model_to_test=0, prompt_index=None):
+                                         model_to_test=0, prompt_index=None, gpt_client=None):
     if not validate_prompt(
             prompt):
         return 0
@@ -271,6 +290,8 @@ def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama
         magic_coder(prompt.replace('#SPECIAL_TOKEN', ''), max_length=512, num_return_sequences=1, do_sample=False)[0][
             'generated_text']
         filling = process_a_code_magic_coder(filling, prompt_index,human_eval)
+    elif model_to_test == 2:
+        filling = get_gpt_code_completion(gpt_client, prompt)
     ##
     candidate = [filling]
     candidates = [candidate]
@@ -280,10 +301,10 @@ def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama
         for a_test in generated_test_cases:
             pass_at_k, results = code_eval_metric.compute(references=[a_test], predictions=candidates, k=[1])
             pass_total += pass_at_k['pass@1']
-        return pass_total / len(generated_test_cases)
+        return pass_total / len(generated_test_cases), filling
     else:
         pass_at_k, results = code_eval_metric.compute(references=[original_test_cases], predictions=candidates, k=[1])
-        return pass_at_k['pass@1']
+        return pass_at_k['pass@1'], filling
 
     # with Pool() as p:
     #     results = p.starmap(f, zip(test_cases, repeat(candidates)))
@@ -292,7 +313,7 @@ def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama
 
 
 def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
-                         human_eval, iteration, magic_coder, model_to_test, number_of_tests, passed_codes, time_test):
+                         human_eval, iteration, magic_coder, model_to_test, number_of_tests, passed_codes, time_test, gpt_client=None):
     e = time.time()
     if iteration != 1000:
         if model_to_test == 0:
@@ -330,6 +351,20 @@ def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, e
                 else:
                     fillings.append(passed_codes[index])
             fillings = process_the_code_magic_coder(fillings, human_eval)
+            fillings = [[fil] for fil in fillings]
+        elif model_to_test == 2:
+            fillings = []
+            for index, a_token in tqdm(enumerate(chosen_prompts)):
+                if not validate_prompt(
+                        a_token):  ##this is because codeLLama_model has no max_new_tokens set and generates infinite output
+                    filling = 'teeeeeeeeeeeeeeeeest'
+                    fillings.append([filling])
+                    continue
+                if not passed_codes[index]:
+                    filling = get_gpt_code_completion(gpt_client, a_token)
+                    fillings.append(filling)
+                else:
+                    fillings.append(passed_codes[index])
             fillings = [[fil] for fil in fillings]
         errorrrs = []
         pass_at_k, results = code_eval_metric.compute(references=final_test_cases[0:number_of_tests],
@@ -497,7 +532,7 @@ def stop_criteria_met(evaluations):
         return False
 
 
-def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0, with_original_testcases=False):
+def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0, with_original_testcases=False, gpt_client=None):
 
     all_generated_promts = []
     # all_generated_promts = []
@@ -542,19 +577,22 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
                 a = time.time()
                 for single_prompt in a_prompt_set:
                     passed = False
-                    passat10 = evaluate_prompt_on_generated_prompts(generated_test_cases=generated_testcases[idx][0:4],
-                                                                    prompt=single_prompt, model_to_test=model_to_test,
-                                                                    prompt_index=idx,
-                                                                    codeLLama_tokenizer=codeLLama_tokenizer,
-                                                                    codeLLama_model=codeLLama_model,
-                                                                    magic_coder=magic_coder,
-                                                                    human_eval=human_eval,
-                                                                    original_test_cases=final_test_cases[idx],
-                                                                    with_original_testcases=with_original_testcases)
+                    passat1, filling = evaluate_prompt_on_generated_prompts(
+                        generated_test_cases=generated_testcases[idx][0:4],
+                        prompt=single_prompt, model_to_test=model_to_test,
+                        prompt_index=idx,
+                        codeLLama_tokenizer=codeLLama_tokenizer,
+                        codeLLama_model=codeLLama_model,
+                        magic_coder=magic_coder,
+                        human_eval=human_eval,
+                        original_test_cases=final_test_cases[idx],
+                        with_original_testcases=with_original_testcases,
+                        gpt_client=gpt_client)
 
-                    candidates.append([single_prompt, passat10])
-                    if passat10 == 1:
+                    candidates.append([single_prompt, passat1])
+                    if passat1 == 1:
                         base_prompts_re[idx] = [single_prompt]
+                        passed_codes[idx] = filling
                         print(
                             f'PAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASED for idx {idx}')
                         passed = True
@@ -603,9 +641,12 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
         if run_evaluation_each_generation:
             run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
                                  human_eval, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
-                                 time_test)
+                                 time_test, gpt_client)
         ## evaluations
         iteration += 1
-    print(base_prompts_re)
     print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation, time_next_make_generation,
                         time_test, time_total_per_instance)
+    print('successful prompts **********************************************************')
+    print(base_prompts_re)
+    print('successful codes ****************************************************************')
+    print(passed_codes)
