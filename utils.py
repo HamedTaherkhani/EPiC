@@ -6,7 +6,7 @@ import time
 import random
 import numpy as np
 import torch
-
+random.seed(137)
 MUtation_llm = {
     1: 'Lama70b',
     2: 'Lama7b'
@@ -374,6 +374,13 @@ def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, e
                 passed_codes[value[0][1]['task_id']] = fillings[value[0][1]['task_id']][0]
         evaluations.append((pass_at_k, results))
         print(pass_at_k)
+        errors = []
+        for index, result in results.items():
+            if not result[0][1]['passed']:
+                errors.append((result[0][1]['task_id'], result[0][1]['result']))
+        errors_index = [err[0] for err in errors]
+        print("errors *********************:  ", errors_index)
+
         time_test.append(time.time() - e)
         # for key,item in results[1].items():
         #     if item[0][1]['passed']:
@@ -532,7 +539,7 @@ def stop_criteria_met(evaluations):
         return False
 
 
-def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0, with_original_testcases=False, gpt_client=None):
+def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0, with_original_testcases=False, gpt_client=None, population_size=5):
 
     all_generated_promts = []
     # all_generated_promts = []
@@ -607,8 +614,12 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
                 time_evaluation[iteration].append(b - a)
 
                 next_generation_prompts = []
-                number_of_generations_by_mutations = 4
-                straight_of_generations_by_mutations = 1
+                if population_size == 5:
+                    number_of_generations_by_mutations = 4
+                    straight_of_generations_by_mutations = 1
+                elif population_size == 10:
+                    number_of_generations_by_mutations = 8
+                    straight_of_generations_by_mutations = 2
                 ## straight select
                 next_generation_prompts.extend(choose_candidates(candidates, straight_of_generations_by_mutations))
 

@@ -16,7 +16,8 @@ experiments = {
     6: 'baseline-magicoder',
     7: 'baseline-codellama',
     8: 'genetic-magicoder-llama2-7b',
-    9: 'genetic-gpt4-gensim-original-testcases'
+    9: 'genetic-gpt4-gensim-original-testcases',
+    10: 'genetic-gpt4-gensim-original-testcases-ten_population'
 }
 print(__name__)
 if __name__ == '__main__':
@@ -43,5 +44,7 @@ if __name__ == '__main__':
         MagicCoderRunner().run_experiment_llama7(human_eval_instances)
     elif experiment_id == 9:
         GPTRunner().run_experiment_gensim(first_generation_openai=True, instances=human_eval_instances, with_original_testcases=True)
+    elif experiment_id == 10:
+        GPTRunner().run_experiment_gensim(first_generation_openai=True, instances=human_eval_instances, with_original_testcases=True, population_size=10)
     else:
         print("Invalid experiment")

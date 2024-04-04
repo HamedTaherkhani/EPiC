@@ -1,4 +1,9 @@
 import time
+import os
+import json
+from dotenv import load_dotenv
+
+load_dotenv()
 def generate_first_population_openai():
     a = time.time()
     from evaluate import load
@@ -10,21 +15,21 @@ def generate_first_population_openai():
     human_eval = load_dataset("openai_humaneval")
     from openai import OpenAI
 
-    key = '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'
+    key = json.loads(os.getenv('openai_key'))
     client = OpenAI(api_key=key)
     gpt4_prompts = []
     for instance in tqdm(human_eval['test']):
         response = client.chat.completions.create(
-            model="gpt-4-1106-preview",
+            model="gpt-4",
             messages=[{"role": "user",
-                       "content": "Refine the given prompt by enhancing its description to ensure clarity and comprehension for sophisticated language models. Maintain the original structure while elaborating on the details and ensuring it's easily understandable for advanced AI models.\n" +
+                       "content": "Refine the given prompt by enhancing its description to ensure clarity and comprehension for sophisticated language models. Maintain the original structure while elaborating on the details and ensuring it's easily understandable for advanced AI models. Use at most 500 tokens.\n" +
                                   instance['prompt']}],
             temperature=0.7,
-            max_tokens=400,
-            n=5
+            max_tokens=550,
+            n=10
         )
         gpt4_prompts.append(response.choices)
-        time.sleep(15)
+        time.sleep(10)
 
     gpt_prompts_list = []
     for ins in gpt4_prompts:
