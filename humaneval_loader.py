@@ -3,8 +3,10 @@ import re
 from evaluate import load
 
 class HumanEvalLoader:
-    def __init__(self):
+    def __init__(self, instances=None):
         self.human_eval = load_dataset("openai_humaneval")
+        if instances is not None:
+            self.human_eval['test'] = [inst for idx,inst in enumerate(self.human_eval['test']) if idx in instances]
 
     def get_human_eval(self):
         return self.human_eval
