@@ -44,7 +44,7 @@ def fetch_pos_identity(pos_tag):
         return None
 
 
-def get_related_words(word, pos_tag, similarity_threshold):
+def get_related_words(word, pos_tag, similarity_threshold, number_threshold):
     '''
     This method returns most similar words to the word passed.
 
@@ -62,22 +62,22 @@ def get_related_words(word, pos_tag, similarity_threshold):
     # Lemmatize the word
     word = lemmatizer.lemmatize(word, pos_tag)
     # Get the synonyms and antonyms of a word
-    synonyms = [word]
+    synonyms = [(word, 1)]
     # antonyms = []
 
     try:
         vector_check = glove_vectors.get_vector(word)
     except:
         # If the word does not exist in the Glove model, return
-        return synonyms
-
+        return [syn[0] for syn in synonyms]
+    max_similarity = 0
     for syn in wordnet.synsets(word):
 
         for l in syn.lemmas():
 
             try:
 
-                if l.name() in synonyms:
+                if l.name() in [syn[0] for syn in synonyms]:
                     continue
 
                 # Get the vector of the synonym
@@ -85,11 +85,22 @@ def get_related_words(word, pos_tag, similarity_threshold):
 
                 # print('Checking word = ', l.name())
                 cosine_diff = glove_vectors.cosine_similarities(vector_1=vector_check, vectors_all=[vector_prospect])
-                # print(cosine_diff)
+                if similarity_threshold is None and number_threshold is None:
+                    if cosine_diff > max_similarity:
+                        max_similarity = cosine_diff
+                        synonyms = [(word, 1), (l.name(), cosine_diff)]
 
                 # similar_by_vector()words_closer_than()n_similarity()
-                if cosine_diff > similarity_threshold:
-                    synonyms.append(l.name())
+                elif number_threshold is not None:
+                    if len(synonyms) >= number_threshold:
+                        lowest_cosine_similarity_index = synonyms.index(min(synonyms, key=lambda x: x[1]))
+                        if synonyms[lowest_cosine_similarity_index][1] < cosine_diff:
+                            synonyms[lowest_cosine_similarity_index] = (l.name(), cosine_diff)
+                    else:
+                        synonyms.append((l.name(), cosine_diff))
+                else:
+                    if cosine_diff > similarity_threshold:
+                        synonyms.append((l.name(), cosine_diff))
 
             except:
 
@@ -98,7 +109,7 @@ def get_related_words(word, pos_tag, similarity_threshold):
             # if l.antonyms():
             #   antonyms.append(l.antonyms()[0].name())
 
-    return synonyms
+    return [syn[0] for syn in synonyms]
 
 
 def get_next_position(total_synonym_array, position_array, last_position):
@@ -132,9 +143,11 @@ def get_next_position(total_synonym_array, position_array, last_position):
     return -1
 
 
-def provide_alternate_sentence(sentence, num_versions=1, max_changes=1, similarity_threshold=0.7, ignore_stopwords=True,
-                               ignore_proper_nouns=True, mutation_probability=0.4):
+def provide_alternate_sentence(sentence, num_versions=1, max_changes=1, similarity_threshold=None, ignore_stopwords=True,
+                               ignore_proper_nouns=True, mutation_probability=0.25, number_threshold=10):
     '''
+    if set both similarity_threshold and number_threshold to None and set mutation_probability to 1 there will be no randomness in algorithm
+
     This method returns an alternate version(s) of the sentence passed by replacing words with their closest synonyms.
 
     args:
@@ -185,7 +198,7 @@ def provide_alternate_sentence(sentence, num_versions=1, max_changes=1, similari
 
         # if POS is noun, adj, adv, or verb - get similar words
         if short_pos is not None:
-            sentence_combination.append(get_related_words(word, short_pos, similarity_threshold))
+            sentence_combination.append(get_related_words(word, short_pos, similarity_threshold, number_threshold))
         # else do nothing
         else:
             sentence_combination.append([word])

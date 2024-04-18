@@ -1,5 +1,6 @@
 import requests
 import re
+import pickle
 from tqdm import tqdm
 from evaluate import load
 import time
@@ -270,7 +271,7 @@ def get_gpt_code_completion(gpt_client, prompt):
     return filling
 
 def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama_tokenizer, codeLLama_model, magic_coder, human_eval, original_test_cases, with_original_testcases=False,
-                                         model_to_test=0, prompt_index=None, gpt_client=None):
+                                         model_to_test=0, prompt_index=None, gpt_client=None, generated_codes_human_eval=None):
     if not validate_prompt(
             prompt):
         return 0
@@ -292,7 +293,10 @@ def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama
             'generated_text']
         filling = process_a_code_magic_coder(filling, prompt_index,human_eval)
     elif model_to_test == 2:
-        filling = get_gpt_code_completion(gpt_client, prompt)
+        if generated_codes_human_eval is not None:
+            filling = generated_codes_human_eval[prompt_index][0]
+        else:
+            filling = get_gpt_code_completion(gpt_client, prompt)
     ##
     candidate = [filling]
     candidates = [candidate]
@@ -403,7 +407,7 @@ def print_time_measures(evaluations, number_of_supposed_passed_codes, start, tim
     print('time_total')
     time_total = time.time() - start
     print(time_total)
-    print(evaluations)
+    # print(evaluations)
     print('time_total_per_instance for every loop:')
     print(np.sum(time_total_per_instance, axis=1) + time_test)
     print('total time:')
@@ -688,8 +692,8 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
 
     ## pre evaluation
     base_prompts_re = []
-    print('running initial evaluation...')
-
+    print('running iteration 0... generating first population')
+    from results.gpt_humaneval_code_completion import gpt_generated_codes
     time_total_per_instance.append([])
     time_evaluation.append([])
     time_next_make_generation.append([])
@@ -705,7 +709,7 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             human_eval=dataset,
             original_test_cases=final_test_cases[idx],
             with_original_testcases=with_original_testcases,
-            gpt_client=gpt_client)
+            gpt_client=gpt_client, generated_codes_human_eval=gpt_generated_codes)
         time_evaluation[iteration].append(round(time.time() - time_one))
 
         if passat1 == 1:
@@ -720,7 +724,7 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             time_next_make_generation[iteration].append(time.time() - time_a)
         time_two = time.time()
         time_total_per_instance[iteration].append(round(time_two - time_one))
-    chosen_prompts = dataset
+    chosen_prompts = [rr[0] for rr in base_prompts_re]
 
     run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
                          dataset, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
@@ -824,10 +828,10 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
         iteration += 1
     print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation, time_next_make_generation,
                         time_test, time_total_per_instance)
-    print('successful prompts **********************************************************')
-    print(base_prompts_re)
-    print('successful codes ****************************************************************')
-    print(passed_codes)
+    # print('successful prompts **********************************************************')
+    # print(base_prompts_re)
+    # print('successful codes ****************************************************************')
+    # print(passed_codes)
 
 
 
@@ -936,7 +940,7 @@ def run_genetic_algorithm_gensim_v2(base_prompts_re, codeLLama_tokenizer, codeLL
             if len(instance) != 1:
                 base_prompts_re[idx] = first_generation[idx]
 
-    print('successful prompts **********************************************************')
-    print(base_prompts_re)
-    print('successful codes ****************************************************************')
-    print(passed_codes)
+    # print('successful prompts **********************************************************')
+    # print(base_prompts_re)
+    # print('successful codes ****************************************************************')
+    # print(passed_codes)
