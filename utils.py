@@ -7,7 +7,7 @@ import time
 import random
 import numpy as np
 import torch
-from generate_first_population import generate_first_population_for_instance
+from generate_first_population import generate_first_population_for_instance, generate_first_population_for_instance_v2
 random.seed(137)
 MUtation_llm = {
     1: 'Lama70b',
@@ -16,7 +16,7 @@ MUtation_llm = {
 from multiprocessing import Pool
 from itertools import repeat
 from itertools import product
-from gensimutils import provide_alternate_sentence
+from gensimutils import mutate_sentence, mutate_prompt
 max_response_length = 6000
 def f(a_test, candidates):
     print(a_test)
@@ -32,6 +32,8 @@ os.environ["HF_ALLOW_CODE_EVAL"] = "1"
 
 
 def choose_candidates(prompts_set, number=1):
+    if number == 0:
+        return []
     chosen_prompts = []
     try:
         for i in range(number):
@@ -252,7 +254,7 @@ def evaluate_prompt(test_cases, prompt, codeLLama_tokenizer, codeLLama_model, ma
 
 
 def get_gpt_code_completion(gpt_client, prompt):
-    response = gpt_client.chat.completions.create(model='gpt-4',
+    response = gpt_client.chat.completions.create(model='gpt-4-0125-preview',
                                                   messages=[{"role": "system",
                                                              "content": "You are a python developer that implements the correct code based on the function description provided. You are given one or more functions to implement. Don't delete import statements in the code snippet. Use at most 1500 words."},
                                                             {"role": "user",
@@ -262,16 +264,17 @@ def get_gpt_code_completion(gpt_client, prompt):
                                                   max_tokens=1600,
                                                   )
     filling = response.choices[0].message.content
+    IMPORT_HEADER = "from typing import *\nimport math\nfrom heapq import *\nimport itertools\nimport re\nimport typing\nimport heapq\n_str=str\nimport re\n"
     ##process
     try:
-        filling = prompt + '\n' + filling.split('```')[1].replace('python', '')
+        filling = IMPORT_HEADER + prompt + '\n' + filling.split('```')[1].replace('python', '')
     except IndexError:
-        filling = prompt
+        filling = IMPORT_HEADER + prompt
     ###
     return filling
 
 def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama_tokenizer, codeLLama_model, magic_coder, human_eval, original_test_cases, with_original_testcases=False,
-                                         model_to_test=0, prompt_index=None, gpt_client=None, generated_codes_human_eval=None):
+                                         model_to_test=0, prompt_index=None, gpt_client=None, generated_codes_human_eval=None, dataset_choice=1):
     if not validate_prompt(
             prompt):
         return 0
@@ -385,7 +388,10 @@ def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, e
                 errors.append((result[0][1]['task_id'], result[0][1]['result']))
         errors_index = [err[0] for err in errors]
         print("errors *********************:  ", errors_index)
-
+        # print('prompts:')
+        # print(chosen_prompts)
+        # print('fillings:')
+        # print(fillings)
         time_test.append(time.time() - e)
         # for key,item in results[1].items():
         #     if item[0][1]['passed']:
@@ -407,7 +413,7 @@ def print_time_measures(evaluations, number_of_supposed_passed_codes, start, tim
     print('time_total')
     time_total = time.time() - start
     print(time_total)
-    # print(evaluations)
+    print(evaluations)
     print('time_total_per_instance for every loop:')
     print(np.sum(time_total_per_instance, axis=1) + time_test)
     print('total time:')
@@ -633,14 +639,14 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
                 for a_candidate in selected_candidates_for_mutations:
                     splits = a_candidate.split(special_token)
                     if len(splits) != 5:
-                        alternate_sentences = provide_alternate_sentence(splits[1], num_versions=1,
-                                                                         similarity_threshold=0.5)
+                        alternate_sentences = mutate_sentence(splits[1], num_versions=1,
+                                                              similarity_threshold=0.5)
                         final_sentence = splits[0] + special_token + alternate_sentences[0] + special_token + splits[2]
                     else:
-                        alternate_sentences1 = provide_alternate_sentence(splits[1], num_versions=1,
-                                                                          similarity_threshold=0.5)
-                        alternate_sentences2 = provide_alternate_sentence(splits[3], num_versions=1,
-                                                                          similarity_threshold=0.5)
+                        alternate_sentences1 = mutate_sentence(splits[1], num_versions=1,
+                                                               similarity_threshold=0.5)
+                        alternate_sentences2 = mutate_sentence(splits[3], num_versions=1,
+                                                               similarity_threshold=0.5)
                         final_sentence = splits[0] + special_token + alternate_sentences1[0] + special_token + splits[
                             2] + special_token + alternate_sentences2[0] + special_token + splits[4]
                     next_generation_prompts.append(final_sentence)
@@ -667,7 +673,7 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
     print('successful codes ****************************************************************')
     print(passed_codes)
 
-def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, dataset, number_of_tests=164, model_to_test=0, with_original_testcases=False, gpt_client=None, population_size=5):
+def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, dataset, number_of_tests=164, model_to_test=0, with_original_testcases=False, gpt_client=None, population_size=5, dataset_choice=1):
 
     all_generated_promts = []
     # all_generated_promts = []
@@ -700,7 +706,7 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
     for idx, prompt in enumerate(dataset):
         time_one = time.time()
         passat1, filling = evaluate_prompt_on_generated_prompts(
-            generated_test_cases=generated_testcases[idx][0:4],
+            generated_test_cases=generated_testcases[idx],
             prompt=prompt, model_to_test=model_to_test,
             prompt_index=idx,
             codeLLama_tokenizer=codeLLama_tokenizer,
@@ -709,7 +715,8 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             human_eval=dataset,
             original_test_cases=final_test_cases[idx],
             with_original_testcases=with_original_testcases,
-            gpt_client=gpt_client, generated_codes_human_eval=gpt_generated_codes)
+            gpt_client=gpt_client, generated_codes_human_eval=None,
+            dataset_choice=dataset_choice)
         time_evaluation[iteration].append(round(time.time() - time_one))
 
         if passat1 == 1:
@@ -720,12 +727,12 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             time_next_make_generation[iteration].append(0)
         else:
             time_a = time.time()
-            base_prompts_re.append(generate_first_population_for_instance(prompt=prompt,population_size=population_size,client=gpt_client, human_eval=dataset,use_stored_prompts=True, idx=idx))
+            base_prompts_re.append(generate_first_population_for_instance(prompt=prompt,population_size=population_size,client=gpt_client, human_eval=dataset,use_stored_prompts=False, idx=idx))
             time_next_make_generation[iteration].append(time.time() - time_a)
         time_two = time.time()
         time_total_per_instance[iteration].append(round(time_two - time_one))
     chosen_prompts = [rr[0] for rr in base_prompts_re]
-
+    print(base_prompts_re)
     run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
                          dataset, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
                          time_test, gpt_client)
@@ -756,7 +763,7 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
                 for single_prompt in a_prompt_set:
                     passed = False
                     passat1, filling = evaluate_prompt_on_generated_prompts(
-                        generated_test_cases=generated_testcases[idx][0:4],
+                        generated_test_cases=generated_testcases[idx],
                         prompt=single_prompt, model_to_test=model_to_test,
                         prompt_index=idx,
                         codeLLama_tokenizer=codeLLama_tokenizer,
@@ -765,7 +772,8 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
                         human_eval=dataset,
                         original_test_cases=final_test_cases[idx],
                         with_original_testcases=with_original_testcases,
-                        gpt_client=gpt_client)
+                        gpt_client=gpt_client,
+                        dataset_choice=dataset_choice)
 
                     candidates.append([single_prompt, passat1])
                     if passat1 == 1:
@@ -791,24 +799,16 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
                 elif population_size == 10:
                     number_of_generations_by_mutations = 8
                     straight_of_generations_by_mutations = 2
+                elif population_size == 3:
+                    number_of_generations_by_mutations = 3
+                    straight_of_generations_by_mutations = 0
                 ## straight select
                 next_generation_prompts.extend(choose_candidates(candidates, straight_of_generations_by_mutations))
 
                 ## mutation
                 selected_candidates_for_mutations = choose_candidates(candidates, number_of_generations_by_mutations)
                 for a_candidate in selected_candidates_for_mutations:
-                    splits = a_candidate.split(special_token)
-                    if len(splits) != 5:
-                        alternate_sentences = provide_alternate_sentence(splits[1], num_versions=1,
-                                                                         similarity_threshold=0.5)
-                        final_sentence = splits[0] + special_token + alternate_sentences[0] + special_token + splits[2]
-                    else:
-                        alternate_sentences1 = provide_alternate_sentence(splits[1], num_versions=1,
-                                                                          similarity_threshold=0.5)
-                        alternate_sentences2 = provide_alternate_sentence(splits[3], num_versions=1,
-                                                                          similarity_threshold=0.5)
-                        final_sentence = splits[0] + special_token + alternate_sentences1[0] + special_token + splits[
-                            2] + special_token + alternate_sentences2[0] + special_token + splits[4]
+                    final_sentence = mutate_prompt(a_candidate)
                     next_generation_prompts.append(final_sentence)
                 # print(f'nexxxxxxxxxxxxxxxxxxxxxxxxxx for {idx}')
                 # print(next_generation_prompts)
@@ -886,15 +886,15 @@ def run_genetic_algorithm_gensim_v2(base_prompts_re, codeLLama_tokenizer, codeLL
                 for a_candidate in selected_candidates_for_mutations:
                     splits = a_candidate.split(special_token)
                     if len(splits) != 5:
-                        alternate_sentences = provide_alternate_sentence(splits[1], num_versions=1,
-                                                                         similarity_threshold=0.5)
+                        alternate_sentences = mutate_sentence(splits[1], num_versions=1,
+                                                              similarity_threshold=0.5)
                         final_sentence = splits[0] + special_token + alternate_sentences[0] + special_token + \
                                          splits[2]
                     else:
-                        alternate_sentences1 = provide_alternate_sentence(splits[1], num_versions=1,
-                                                                          similarity_threshold=0.5)
-                        alternate_sentences2 = provide_alternate_sentence(splits[3], num_versions=1,
-                                                                          similarity_threshold=0.5)
+                        alternate_sentences1 = mutate_sentence(splits[1], num_versions=1,
+                                                               similarity_threshold=0.5)
+                        alternate_sentences2 = mutate_sentence(splits[3], num_versions=1,
+                                                               similarity_threshold=0.5)
                         final_sentence = splits[0] + special_token + alternate_sentences1[0] + special_token + \
                                          splits[
                                              2] + special_token + alternate_sentences2[0] + special_token + splits[

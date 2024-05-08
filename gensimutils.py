@@ -143,8 +143,23 @@ def get_next_position(total_synonym_array, position_array, last_position):
     return -1
 
 
-def provide_alternate_sentence(sentence, num_versions=1, max_changes=1, similarity_threshold=None, ignore_stopwords=True,
-                               ignore_proper_nouns=True, mutation_probability=0.25, number_threshold=10):
+def mutate_prompt(a_candidate):
+    splits = a_candidate.split(special_token)
+    if len(splits) != 5:
+        alternate_sentences = mutate_sentence(splits[1], num_versions=1,
+                                              similarity_threshold=0.5)
+        final_sentence = splits[0] + special_token + alternate_sentences[0] + special_token + splits[2]
+    else:
+        alternate_sentences1 = mutate_sentence(splits[1], num_versions=1,
+                                               similarity_threshold=0.5)
+        alternate_sentences2 = mutate_sentence(splits[3], num_versions=1,
+                                               similarity_threshold=0.5)
+        final_sentence = splits[0] + special_token + alternate_sentences1[0] + special_token + splits[
+            2] + special_token + alternate_sentences2[0] + special_token + splits[4]
+    return final_sentence
+
+def mutate_sentence(sentence, num_versions=1, similarity_threshold=None, ignore_stopwords=True,
+                    ignore_proper_nouns=True, mutation_probability=0.25, number_threshold=10):
     '''
     if set both similarity_threshold and number_threshold to None and set mutation_probability to 1 there will be no randomness in algorithm
 
@@ -333,12 +348,12 @@ def produce_first_generation():
             added_text = refactor_prompt(a_test)
         splits = a_test.split(special_token)
         if len(splits) != 5:
-            alternate_sentences = provide_alternate_sentence(splits[1], num_versions=4, similarity_threshold=0.5)
+            alternate_sentences = mutate_sentence(splits[1], num_versions=4, similarity_threshold=0.5)
             final_sentence = [splits[0] + special_token + '\n ' + added_text + alternative + special_token + splits[2]
                               for alternative in alternate_sentences]
         else:
-            alternate_sentences1 = provide_alternate_sentence(splits[1], num_versions=4, similarity_threshold=0.5)
-            alternate_sentences2 = provide_alternate_sentence(splits[3], num_versions=4, similarity_threshold=0.5)
+            alternate_sentences1 = mutate_sentence(splits[1], num_versions=4, similarity_threshold=0.5)
+            alternate_sentences2 = mutate_sentence(splits[3], num_versions=4, similarity_threshold=0.5)
             final_sentence = [
                 splits[0] + special_token + '\n' + alternative[0] + special_token + splits[2] + special_token +
                 alternative[1] + special_token + splits[4] for alternative in
