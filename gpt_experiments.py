@@ -37,7 +37,8 @@ class GPTRunner:
             human_eval_loader = HumanEvalLoader(instances)
             human_eval = human_eval_loader.get_human_eval()
             final_test_cases = human_eval_loader.get_final_test_cases()
-            generated_testcases = get_testcases()
+            # generated_testcases = get_testcases()
+            generated_testcases = human_eval_loader.get_generated_test_cases()
             dataset = [hh['prompt'] for hh in human_eval['test']]
             number_of_tests = 164
         else:
@@ -47,12 +48,15 @@ class GPTRunner:
             generated_testcases = final_test_cases ## change this
             dataset = mbpp_loader.get_prompts()
             number_of_tests = 974
-        if instances is not None:
-            if len(instances) != 0:
-                # first_generation_prompts_refactored = [first_generation_prompts_refactored[i] for i in instances]
-                generated_testcases = [generated_testcases[i] for i in instances]
-        # print(dataset)
-        # print(final_test_cases)
+            errors = [3, 5, 7, 13, 16, 23, 22, 26, 34, 39, 40, 43, 44, 49, 52, 51, 60, 66, 67, 76, 78, 80, 81, 84, 85, 89, 95,
+             96, 97, 98]
+        # if instances is not None:
+        #     if len(instances) != 0:
+        #         # first_generation_prompts_refactored = [first_generation_prompts_refactored[i] for i in instances]
+        #         generated_testcases = [generated_testcases[i] for i in instances]
+        print(len(dataset))
+        print(len(final_test_cases))
+        print(len(generated_testcases))
         if version == 1:
             run_genetic_algorithm_gensim_(codeLLama_tokenizer=None,
                                           codeLLama_model=None,

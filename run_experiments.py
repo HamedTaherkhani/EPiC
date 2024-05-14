@@ -45,7 +45,7 @@ if __name__ == '__main__':
     elif experiment_id == 8:
         MagicCoderRunner().run_experiment_llama7(human_eval_instances)
     elif experiment_id == 9:
-        GPTRunner().run_experiment_gensim(first_generation_openai=True, instances=human_eval_instances, with_original_testcases=True, population_size=5)
+        GPTRunner().run_experiment_gensim(first_generation_openai=True, instances=human_eval_instances, with_original_testcases=False, population_size=5)
     elif experiment_id == 10:
         GPTRunner().run_experiment_gensim(first_generation_openai=True, instances=human_eval_instances, with_original_testcases=True, population_size=10)
     elif experiment_id == 11:

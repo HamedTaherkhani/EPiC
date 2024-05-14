@@ -377,9 +377,9 @@ def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, e
         errorrrs = []
         pass_at_k, results = code_eval_metric.compute(references=final_test_cases[0:number_of_tests],
                                                       predictions=fillings, k=[1])  ##here
-        for key, value in results.items():
-            if value[0][1]['passed']:
-                passed_codes[value[0][1]['task_id']] = fillings[value[0][1]['task_id']][0]
+        # for key, value in results.items():
+        #     if value[0][1]['passed']:
+        #         passed_codes[value[0][1]['task_id']] = fillings[value[0][1]['task_id']][0]
         evaluations.append((pass_at_k, results))
         print(pass_at_k)
         errors = []
@@ -388,6 +388,7 @@ def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, e
                 errors.append((result[0][1]['task_id'], result[0][1]['result']))
         errors_index = [err[0] for err in errors]
         print("errors *********************:  ", errors_index)
+        print(results)
         # print('prompts:')
         # print(chosen_prompts)
         # print('fillings:')
@@ -454,7 +455,6 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
     start = time.time()
     for iteration in tqdm(range(iterations)):
         torch.cuda.empty_cache()
-        print(torch.cuda.memory_summary())
         time_total_per_instance.append([])
         time_evaluation.append([])
         time_next_make_generation.append([])
@@ -673,6 +673,16 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
     print('successful codes ****************************************************************')
     print(passed_codes)
 
+
+def select_final_prompts(base_prompts_re, dataset):
+    chosen_prompts = []
+    for index,prompt_set in enumerate(base_prompts_re):
+        if len(prompt_set) == 1:
+            chosen_prompts.append(prompt_set[0])
+        else:
+            chosen_prompts.append(dataset[index])
+    return chosen_prompts
+
 def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, dataset, number_of_tests=164, model_to_test=0, with_original_testcases=False, gpt_client=None, population_size=5, dataset_choice=1):
 
     all_generated_promts = []
@@ -727,12 +737,12 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             time_next_make_generation[iteration].append(0)
         else:
             time_a = time.time()
-            base_prompts_re.append(generate_first_population_for_instance(prompt=prompt,population_size=population_size,client=gpt_client, human_eval=dataset,use_stored_prompts=False, idx=idx))
+            base_prompts_re.append(generate_first_population_for_instance(prompt=prompt,population_size=population_size,client=gpt_client, human_eval=dataset,use_stored_prompts=True, idx=idx))
             time_next_make_generation[iteration].append(time.time() - time_a)
         time_two = time.time()
         time_total_per_instance[iteration].append(round(time_two - time_one))
-    chosen_prompts = [rr[0] for rr in base_prompts_re]
-    print(base_prompts_re)
+    chosen_prompts = select_final_prompts(base_prompts_re, dataset)
+    # chosen_prompts = [rr[0] for rr in base_prompts_re]
     run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
                          dataset, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
                          time_test, gpt_client)
@@ -818,7 +828,7 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             time_next_make_generation[iteration].append(d - b)
             time_total_per_instance[iteration].append(d - c)
 
-        chosen_prompts = [rr[0] for rr in base_prompts_re[0:number_of_tests]]  ##here
+        chosen_prompts = select_final_prompts(base_prompts_re, dataset)  ##here
         ## evaluation
         if run_evaluation_each_generation:
             run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
