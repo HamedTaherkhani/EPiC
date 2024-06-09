@@ -7,12 +7,19 @@ import time
 import random
 import numpy as np
 import torch
+import os
 from generate_first_population import generate_first_population_for_instance, generate_first_population_for_instance_v2
 random.seed(137)
 MUtation_llm = {
     1: 'Lama70b',
     2: 'Lama7b'
 }
+from openai import OpenAI
+from dotenv import load_dotenv
+load_dotenv()
+key = os.getenv('openai_key')
+
+openai_model = os.getenv("openai_model")
 from multiprocessing import Pool
 from itertools import repeat
 from itertools import product
@@ -254,14 +261,19 @@ def evaluate_prompt(test_cases, prompt, codeLLama_tokenizer, codeLLama_model, ma
 
 
 def get_gpt_code_completion(gpt_client, prompt):
-    response = gpt_client.chat.completions.create(model='gpt-4-0125-preview',
+    print(openai_model)
+    # openai_model = 'gpt-4o'
+    response = gpt_client.chat.completions.create(model=openai_model,
                                                   messages=[{"role": "system",
-                                                             "content": "You are a python developer that implements the correct code based on the function description provided. You are given one or more functions to implement. Don't delete import statements in the code snippet. Use at most 1500 words."},
+                                                             "content": "You are a python developer that implements the correct code based on the function description provided. You are given one or more functions to implement. Don't delete import statements in the code snippet. Use at most 1000 words."},
                                                             {"role": "user",
                                                              "content": prompt.replace(
                                                                  "#SPECIAL_TOKEN", "")}],
                                                   temperature=0,
-                                                  max_tokens=1600,
+                                                  max_tokens=1024,
+                                                  top_p=1,
+                                                  frequency_penalty=0.0,
+                                                  presence_penalty=0.0,
                                                   )
     filling = response.choices[0].message.content
     IMPORT_HEADER = "from typing import *\nimport math\nfrom heapq import *\nimport itertools\nimport re\nimport typing\nimport heapq\n_str=str\nimport re\n"
@@ -542,7 +554,7 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
                         time_test, time_total_per_instance)
 
 def stop_criteria_met(evaluations):
-    if len(evaluations) < 4:
+    if len(evaluations) < 2:
         return False
     if evaluations[-1][0]['pass@1'] <= evaluations[-2][0]['pass@1']:
         return True
@@ -713,6 +725,7 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
     time_total_per_instance.append([])
     time_evaluation.append([])
     time_next_make_generation.append([])
+    pass_threshold = 0.6
     for idx, prompt in enumerate(dataset):
         time_one = time.time()
         passat1, filling = evaluate_prompt_on_generated_prompts(
@@ -728,8 +741,9 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             gpt_client=gpt_client, generated_codes_human_eval=None,
             dataset_choice=dataset_choice)
         time_evaluation[iteration].append(round(time.time() - time_one))
-
-        if passat1 == 1:
+        print(idx)
+        print(passat1)
+        if passat1 >= pass_threshold:
             base_prompts_re.append([prompt])
             passed_codes[idx] = filling
             print(
@@ -737,7 +751,7 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             time_next_make_generation[iteration].append(0)
         else:
             time_a = time.time()
-            base_prompts_re.append(generate_first_population_for_instance(prompt=prompt,population_size=population_size,client=gpt_client, human_eval=dataset,use_stored_prompts=True, idx=idx))
+            base_prompts_re.append(generate_first_population_for_instance(prompt=prompt,population_size=population_size,client=gpt_client, human_eval=dataset,use_stored_prompts=False, idx=idx))
             time_next_make_generation[iteration].append(time.time() - time_a)
         time_two = time.time()
         time_total_per_instance[iteration].append(round(time_two - time_one))
@@ -785,8 +799,8 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
                         gpt_client=gpt_client,
                         dataset_choice=dataset_choice)
 
-                    candidates.append([single_prompt, passat1])
-                    if passat1 == 1:
+                    candidates.append([single_prompt, passat1, filling])
+                    if passat1 >= pass_threshold:
                         base_prompts_re[idx] = [single_prompt]
                         passed_codes[idx] = filling
                         print(
@@ -799,6 +813,21 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
                     time_total_per_instance[iteration].append(b-a)
                     time_next_make_generation[iteration].append(0)
                     continue
+
+                best_candidate = sorted(candidates, key=lambda x: x[1], reverse=True)[0]
+                if best_candidate[1] >= pass_threshold:
+                    base_prompts_re[idx] = [best_candidate[0]]
+                    passed_codes[idx] = best_candidate[2]
+                    print(
+                        f'PAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASED for idx {idx}')
+                    passed = True
+                    if passed:
+                        b = time.time()
+                        time_evaluation[iteration].append(b - a)
+                        time_total_per_instance[iteration].append(b - a)
+                        time_next_make_generation[iteration].append(0)
+                        continue
+
                 b = time.time()
                 time_evaluation[iteration].append(b - a)
 

@@ -18,7 +18,12 @@ class HumanEvalLoader:
     def get_final_test_cases(self):
         final_test_cases = []
         for a_test in self.human_eval['test']:
-            method_name = re.findall('def .*\(', a_test['prompt'])[0].replace('def ', '').replace('(', '')
+            method_names = re.findall('def .*\(', a_test['prompt'])
+            if len(method_names) == 2:
+                method_name = method_names[1]
+            else:
+                method_name = method_names[0]
+            method_name = method_name.replace('def ', '').replace('(', '')
             test = a_test['test'] + '\ncheck(' + method_name + ')'
             final_test_cases.append(test)
         return final_test_cases

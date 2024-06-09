@@ -9,7 +9,7 @@ from chat_gpt_prompts_distilled_ten_generation import refactor_prompts, get_gpt_
 from gensim_prompts import get_gensim_prompts
 from humaneval_loader import HumanEvalLoader
 from MBPPLoader import MBPPLoader
-from chat_gpt_generated_testcases import get_testcases
+# from chat_gpt_generated_testcases import get_testcases
 from test_cases import get_testcases
 from utils import run_genetic_algorithm, run_genetic_algorithm_gensim_, run_genetic_algorithm_gensim_v2
 
@@ -23,10 +23,11 @@ class GPTRunner:
 
         :param first_generation_openai:
         :param instances:
-        :param with_original_testcases:
+        :param with_original_testcases: if true the intermediate evaluation is executed on the original test cases.
+         if false the intermediate evaluation is executed on the generated test cases.
         :param population_size:
         :param version:
-        :param dataset_choice: 1 means humaneval. 2 means mbpp
+        :param dataset_choice: 1 = humaneval, 2 = mbpp
         :return:
 
         '''
@@ -45,7 +46,7 @@ class GPTRunner:
             mbpp_random_instances = json.loads(os.getenv('mbpp_random_instances'))
             mbpp_loader = MBPPLoader(mbpp_random_instances)
             final_test_cases = mbpp_loader.get_tests()
-            generated_testcases = final_test_cases ## change this
+            generated_testcases = mbpp_loader.get_generated_testcases()
             dataset = mbpp_loader.get_prompts()
             number_of_tests = 974
             errors = [3, 5, 7, 13, 16, 23, 22, 26, 34, 39, 40, 43, 44, 49, 52, 51, 60, 66, 67, 76, 78, 80, 81, 84, 85, 89, 95,
@@ -57,6 +58,8 @@ class GPTRunner:
         print(len(dataset))
         print(len(final_test_cases))
         print(len(generated_testcases))
+        # print('final test cases **********************')
+        # print(final_test_cases)
         if version == 1:
             run_genetic_algorithm_gensim_(codeLLama_tokenizer=None,
                                           codeLLama_model=None,

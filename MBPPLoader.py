@@ -1,9 +1,10 @@
 import re
+import pickle
 class MBPPLoader:
     def __init__(self, mbpp_random_instances):
         from datasets import load_dataset
         self.dataset = []
-        dataset_full = load_dataset("mbpp")
+        dataset_full = load_dataset("google-research-datasets/mbpp")
         for key in dataset_full.keys():
             for item in dataset_full[key]:
                 self.dataset.append(item)
@@ -31,6 +32,20 @@ class MBPPLoader:
             entry += ":\n  \"\"\"" + a['text'] + "\"\"\""
             self.prompts_.append(entry)
 
+    def get_generated_testcases(self):
+        with open('testcases/mbpp_generated_testcases', 'rb') as fp:
+            item_list = pickle.load(fp)
+        def filter_list(l):
+            temp = []
+            for i in l:
+                if 'assert False' in i or 'assert True' in i:
+                    print(i)
+                    print(1)
+                    continue
+                temp.append(i)
+            return temp[:5]
+        item_list = map(filter_list, item_list)
+        return list(item_list)
     def get_prompts(self):
         return self.prompts_
 

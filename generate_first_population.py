@@ -1,7 +1,12 @@
 from chat_gpt_prompts_distilled import get_gpt_prompts_distilled, refactor_prompt
 from chat_gpt_prompts_distilled_ten_generation import get_gpt_prompts_distilled_ten
 from gensimutils import mutate_prompt
+from dotenv import load_dotenv
+import os
+load_dotenv()
+key = os.getenv('openai_key')
 
+openai_model = os.getenv("openai_model")
 
 def get_first_population(gpt_prompts, human_eval, population_size, idx):
     a = gpt_prompts[0:population_size]
@@ -35,7 +40,7 @@ def generate_first_population_for_instance_v2(prompt, population_size, client):
 
 def get_completion(client, prompt, population_size):
     response = client.chat.completions.create(
-        model="gpt-4-0125-preview",
+        model=openai_model,
         messages=[{"role": "user", "content":
             """Please rewrite the function description based on these instructions:
             1- Add input and output types of the function to the description.
