@@ -175,8 +175,7 @@ def mutate_sentence(sentence, num_versions=1, similarity_threshold=None, ignore_
     ignore_proper_nouns (bool) = If True, proper nouns will be ignored for replacement
 
     returns:
-
-    list of alternate sentence(s)
+    alternate sentence
     '''
 
     alternate_sentences = []

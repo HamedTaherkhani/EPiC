@@ -18,7 +18,7 @@ class GPTRunner:
     def __init__(self):
         super(GPTRunner, self).__init__()
 
-    def run_experiment_gensim(self, first_generation_openai=False, instances=None, with_original_testcases=False, population_size=5, version=1, dataset_choice=1):
+    def run_experiment_gensim(self, first_generation_openai=False, instances=None, population_size=5, version=1, dataset_choice=1):
         '''
 
         :param first_generation_openai:
@@ -41,20 +41,13 @@ class GPTRunner:
             # generated_testcases = get_testcases()
             generated_testcases = human_eval_loader.get_generated_test_cases()
             dataset = [hh['prompt'] for hh in human_eval['test']]
-            number_of_tests = 164
+            number_of_tests = len(dataset)
         else:
-            mbpp_random_instances = json.loads(os.getenv('mbpp_random_instances'))
-            mbpp_loader = MBPPLoader(mbpp_random_instances)
+            mbpp_loader = MBPPLoader(None)
             final_test_cases = mbpp_loader.get_tests()
             generated_testcases = mbpp_loader.get_generated_testcases()
             dataset = mbpp_loader.get_prompts()
-            number_of_tests = 974
-            errors = [3, 5, 7, 13, 16, 23, 22, 26, 34, 39, 40, 43, 44, 49, 52, 51, 60, 66, 67, 76, 78, 80, 81, 84, 85, 89, 95,
-             96, 97, 98]
-        # if instances is not None:
-        #     if len(instances) != 0:
-        #         # first_generation_prompts_refactored = [first_generation_prompts_refactored[i] for i in instances]
-        #         generated_testcases = [generated_testcases[i] for i in instances]
+            number_of_tests = len(dataset)
         print(len(dataset))
         print(len(final_test_cases))
         print(len(generated_testcases))
@@ -66,7 +59,7 @@ class GPTRunner:
                                           magic_coder=None, final_test_cases=final_test_cases,
                                           generated_testcases=generated_testcases, dataset=dataset,
                                           number_of_tests=number_of_tests,
-                                          model_to_test=2, with_original_testcases=with_original_testcases,
+                                          model_to_test=2,
                                           gpt_client=gpt_client,
                                           population_size=population_size,
                                           dataset_choice=dataset_choice)

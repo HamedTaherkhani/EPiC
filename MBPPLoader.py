@@ -1,15 +1,13 @@
 import re
 import pickle
 class MBPPLoader:
-    def __init__(self, mbpp_random_instances=None):
+    def __init__(self):
         from datasets import load_dataset
         self.dataset = []
         dataset_full = load_dataset("google-research-datasets/mbpp", "sanitized")
         for key in dataset_full.keys():
             for item in dataset_full[key]:
                 self.dataset.append(item)
-        if mbpp_random_instances is not None:
-            self.dataset = [dd for index, dd in enumerate(self.dataset) if index in mbpp_random_instances]
         self.prompts = [a['prompt'] for a in self.dataset]
         self.tests = ["\n".join(a['test_list']) for a in self.dataset]
         self.func_names = []

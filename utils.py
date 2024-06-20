@@ -44,14 +44,13 @@ def choose_candidates(prompts_set, number=1):
     chosen_prompts = []
     try:
         for i in range(number):
-            # temp = random.choices(prompts_set, weights=((ss[2]+ss[1]) for ss in prompts_set), k=1)[0]
-            temp = random.choices(prompts_set, weights=(ss[1] for ss in prompts_set), k=1)[
-                0]  ## just considering pass@k
-            prompts_set.remove(temp)
+            temp = random.choices(prompts_set, weights=(ss[1] for ss in prompts_set), k=1)[0]
+            # prompts_set.remove(temp)
             chosen_prompts.append(temp)
     except ValueError:
         chosen_prompts = random.choices(prompts_set, k=number)
     return [a[0] for a in chosen_prompts]
+
 
 def process_prompt(res, a_candidate):
     f = res.find("# Explanation:")
@@ -261,8 +260,6 @@ def evaluate_prompt(test_cases, prompt, codeLLama_tokenizer, codeLLama_model, ma
 
 
 def get_gpt_code_completion(gpt_client, prompt):
-    print(openai_model)
-    # openai_model = 'gpt-4o'
     response = gpt_client.chat.completions.create(model=openai_model,
                                                   messages=[{"role": "system",
                                                              "content": "You are a python developer that implements the correct code based on the function description provided. You are given one or more functions to implement. Don't delete import statements in the code snippet. Use at most 1000 words."},
@@ -285,8 +282,8 @@ def get_gpt_code_completion(gpt_client, prompt):
     ###
     return filling
 
-def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama_tokenizer, codeLLama_model, magic_coder, human_eval, original_test_cases, with_original_testcases=False,
-                                         model_to_test=0, prompt_index=None, gpt_client=None, generated_codes_human_eval=None, dataset_choice=1):
+def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama_tokenizer, codeLLama_model, magic_coder, human_eval,
+                                         model_to_test=0, prompt_index=None, gpt_client=None, generated_codes_human_eval=None):
     if not validate_prompt(
             prompt):
         return 0
@@ -317,14 +314,11 @@ def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama
     candidates = [candidate]
 
     pass_total = 0
-    if not with_original_testcases:
-        for a_test in generated_test_cases:
-            pass_at_k, results = code_eval_metric.compute(references=[a_test], predictions=candidates, k=[1])
-            pass_total += pass_at_k['pass@1']
-        return pass_total / len(generated_test_cases), filling
-    else:
-        pass_at_k, results = code_eval_metric.compute(references=[original_test_cases], predictions=candidates, k=[1])
-        return pass_at_k['pass@1'], filling
+    for a_test in generated_test_cases:
+        pass_at_k, results = code_eval_metric.compute(references=[a_test], predictions=candidates, k=[1])
+        pass_total += pass_at_k['pass@1']
+    return pass_total / len(generated_test_cases), filling
+
 
     # with Pool() as p:
     #     results = p.starmap(f, zip(test_cases, repeat(candidates)))
@@ -495,9 +489,7 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
                                                                     codeLLama_tokenizer=codeLLama_tokenizer,
                                                                     codeLLama_model=codeLLama_model,
                                                                     magic_coder=magic_coder,
-                                                                    human_eval=human_eval,
-                                                                    original_test_cases=final_test_cases[idx],
-                                                                    with_original_testcases=False)
+                                                                    human_eval=human_eval)
 
                     candidates.append([single_prompt, passat10])
                     if passat10 == 1:
@@ -553,16 +545,19 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
     print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation, time_next_make_generation,
                         time_test, time_total_per_instance)
 
+
 def stop_criteria_met(evaluations):
     if len(evaluations) < 2:
         return False
-    if evaluations[-1][0]['pass@1'] <= evaluations[-2][0]['pass@1']:
+    elif len(evaluations) >= 5:
+        return True
+    elif evaluations[-1][0]['pass@1'] <= evaluations[-2][0]['pass@1']:
         return True
     else:
         return False
 
 
-def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0, with_original_testcases=False, gpt_client=None, population_size=5):
+def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0, gpt_client=None, population_size=5):
 
     all_generated_promts = []
     # all_generated_promts = []
@@ -615,8 +610,6 @@ def run_genetic_algorithm_gensim(base_prompts_re, codeLLama_tokenizer, codeLLama
                         codeLLama_model=codeLLama_model,
                         magic_coder=magic_coder,
                         human_eval=human_eval,
-                        original_test_cases=final_test_cases[idx],
-                        with_original_testcases=with_original_testcases,
                         gpt_client=gpt_client)
 
                     candidates.append([single_prompt, passat1])
@@ -695,7 +688,7 @@ def select_final_prompts(base_prompts_re, dataset):
             chosen_prompts.append(dataset[index])
     return chosen_prompts
 
-def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, dataset, number_of_tests=164, model_to_test=0, with_original_testcases=False, gpt_client=None, population_size=5, dataset_choice=1):
+def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, dataset, number_of_tests=164, model_to_test=0, gpt_client=None, population_size=5, dataset_choice=1):
 
     all_generated_promts = []
     # all_generated_promts = []
@@ -726,6 +719,9 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
     time_evaluation.append([])
     time_next_make_generation.append([])
     pass_threshold = 0.6
+    all_codes = [[]]
+    for i in range(len(dataset)):
+        all_codes[iteration].append([])
     for idx, prompt in enumerate(dataset):
         time_one = time.time()
         passat1, filling = evaluate_prompt_on_generated_prompts(
@@ -736,14 +732,12 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             codeLLama_model=codeLLama_model,
             magic_coder=magic_coder,
             human_eval=dataset,
-            original_test_cases=final_test_cases[idx],
-            with_original_testcases=with_original_testcases,
-            gpt_client=gpt_client, generated_codes_human_eval=None,
-            dataset_choice=dataset_choice)
+            gpt_client=gpt_client, generated_codes_human_eval=None)
         time_evaluation[iteration].append(round(time.time() - time_one))
         print(idx)
         print(passat1)
-        if passat1 >= pass_threshold:
+        all_codes[iteration][idx].append((prompt,filling, passat1))
+        if passat1 >= 0.9:
             base_prompts_re.append([prompt])
             passed_codes[idx] = filling
             print(
@@ -751,7 +745,8 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             time_next_make_generation[iteration].append(0)
         else:
             time_a = time.time()
-            base_prompts_re.append(generate_first_population_for_instance(prompt=prompt,population_size=population_size,client=gpt_client, human_eval=dataset,use_stored_prompts=False, idx=idx))
+            first_generation = generate_first_population_for_instance(prompt=prompt,population_size=population_size,client=gpt_client, human_eval=dataset,use_stored_prompts=False, idx=idx, dataset_choice=dataset_choice, generated_testcases=generated_testcases[idx])
+            base_prompts_re.append(first_generation)
             time_next_make_generation[iteration].append(time.time() - time_a)
         time_two = time.time()
         time_total_per_instance[iteration].append(round(time_two - time_one))
@@ -764,6 +759,10 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
     # pre evaluation
     iteration += 1
     while(not stop_criteria_met(evaluations)):
+        all_codes.append([])
+        for i in range(len(dataset)):
+            all_codes[iteration].append([])
+
         time_total_per_instance.append([])
         time_evaluation.append([])
         time_next_make_generation.append([])
@@ -794,13 +793,10 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
                         codeLLama_model=codeLLama_model,
                         magic_coder=magic_coder,
                         human_eval=dataset,
-                        original_test_cases=final_test_cases[idx],
-                        with_original_testcases=with_original_testcases,
-                        gpt_client=gpt_client,
-                        dataset_choice=dataset_choice)
-
+                        gpt_client=gpt_client)
+                    all_codes[iteration][idx].append((single_prompt, filling, passat1))
                     candidates.append([single_prompt, passat1, filling])
-                    if passat1 >= pass_threshold:
+                    if passat1 == 1:
                         base_prompts_re[idx] = [single_prompt]
                         passed_codes[idx] = filling
                         print(
@@ -833,8 +829,8 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
 
                 next_generation_prompts = []
                 if population_size == 5:
-                    number_of_generations_by_mutations = 4
-                    straight_of_generations_by_mutations = 1
+                    number_of_generations_by_mutations = 5
+                    straight_of_generations_by_mutations = 0
                 elif population_size == 10:
                     number_of_generations_by_mutations = 8
                     straight_of_generations_by_mutations = 2
@@ -863,8 +859,9 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
                                  dataset, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
                                  time_test, gpt_client)
-        ## evaluations
         iteration += 1
+    print(passed_codes)
+    print(all_codes)
     print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation, time_next_make_generation,
                         time_test, time_total_per_instance)
     # print('successful prompts **********************************************************')
@@ -955,8 +952,6 @@ def run_genetic_algorithm_gensim_v2(base_prompts_re, codeLLama_tokenizer, codeLL
                     codeLLama_model=codeLLama_model,
                     magic_coder=magic_coder,
                     human_eval=human_eval,
-                    original_test_cases=final_test_cases[idx],
-                    with_original_testcases=with_original_testcases,
                     gpt_client=gpt_client)
 
                 if passat1 == 1:

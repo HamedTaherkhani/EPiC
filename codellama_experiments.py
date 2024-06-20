@@ -4,7 +4,7 @@ from chat_gpt_prompts import get_initial_processed_gpt_prompts
 from chat_gpt_prompts_distilled import refactor_prompts,get_gpt_prompts_distilled
 from humaneval_loader import HumanEvalLoader
 from chat_gpt_generated_testcases import get_testcases
-from utils import run_genetic_algorithm, run_genetic_algorithm_gensim
+from utils import run_genetic_algorithm, run_genetic_algorithm_gensim_, run_genetic_algorithm_gensim
 from gensim_prompts import get_gensim_prompts
 
 class CodellamaExperiments:
@@ -159,4 +159,4 @@ class CodellamaExperiments:
                                      codeLLama_model=codeLLama_model,
                                      magic_coder=None, final_test_cases=final_test_cases,
                                      generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164,
-                                     model_to_test=0, with_original_testcases=with_original_testcases)
+                                     model_to_test=0)

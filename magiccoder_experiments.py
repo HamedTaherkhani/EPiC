@@ -95,7 +95,7 @@ class MagicCoderRunner:
                               magic_coder=magic_coder, final_test_cases=final_test_cases,
                               generated_testcases=generated_testcases, human_eval=human_eval, number_of_tests=164, model_to_test=1, mutation_llm=2)
 
-    def run_experiments_gensim(self, first_generation_openai=False, instances=None, with_original_testcases=False):
+    def run_experiments_gensim(self, first_generation_openai=False, instances=None):
         import os
         os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
         magic_coder = self.load_magiccoder()
@@ -120,4 +120,4 @@ class MagicCoderRunner:
                                      magic_coder=magic_coder, final_test_cases=final_test_cases,
                                      generated_testcases=generated_testcases, human_eval=human_eval,
                                      number_of_tests=164,
-                                     model_to_test=1, with_original_testcases=with_original_testcases)
+                                     model_to_test=1)
