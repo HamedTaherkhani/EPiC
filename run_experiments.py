@@ -33,11 +33,11 @@ if __name__ == '__main__':
     elif experiment_id == 2:
         CodellamaExperiments().run_experiment(human_eval_instances)
     elif experiment_id == 3:
-        MagicCoderRunner().run_experiments_gensim(instances=human_eval_instances, first_generation_openai=True, with_original_testcases=False)
+        MagicCoderRunner().run_experiments_gensim(instances=human_eval_instances)
     elif experiment_id == 4:
-        MagicCoderRunner().run_experiments_gensim(instances=human_eval_instances, first_generation_openai=True, with_original_testcases=True)
+        MagicCoderRunner().run_experiments_gensim(instances=human_eval_instances)
     elif experiment_id == 5:
-        CodellamaExperiments().run_experiments_gensim(instances=human_eval_instances, first_generation_openai=True, with_original_testcases=True)
+        CodellamaExperiments().run_experiments_gensim(instances=human_eval_instances)
     elif experiment_id == 6:
         pass
     elif experiment_id == 7:

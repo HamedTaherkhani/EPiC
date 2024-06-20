@@ -33,7 +33,7 @@ def generate_for_humaneval():
     gen = generator_factory("python")
     human_eval = HumanEvalLoader(None).get_human_eval()['test']
     test_model = model_factory("gpt-4-0125-preview")
-    number_of_tests = 2
+    number_of_tests = 10
     human_eval_testcases = []
     time1 = time.time()
     for idx, item in tqdm(enumerate(human_eval)):

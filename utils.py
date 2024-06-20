@@ -117,7 +117,7 @@ headers = {
 
 
 def mutate_prompts_api(a_candidate, mutation_llm):
-    query2 = "Here is a python function and it's description. Please Refine and elaborate the description by enhancing it's clarity and comprehension for sophisticated language models. Please put the refined description between #Explanation and #End. \\n"
+    query2 = "Here is a python function and it's description. Please Refine and elaborate the description by enhancing it's clarity and comprehension for sophisticated language models. Please put the refined description between. Use at most 400 words #Explanation and #End. \\n"
     url = "https://www.llama2.ai/api"
     prompt_changed = a_candidate.replace('\n', '\\n').replace("\"", '\\"')
     if mutation_llm == 1:

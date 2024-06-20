@@ -6,7 +6,6 @@ import json
 from chat_gpt_prompts import get_initial_processed_gpt_prompts
 from chat_gpt_prompts_distilled import refactor_prompts,get_gpt_prompts_distilled
 from chat_gpt_prompts_distilled_ten_generation import refactor_prompts, get_gpt_prompts_distilled_ten
-from gensim_prompts import get_gensim_prompts
 from humaneval_loader import HumanEvalLoader
 from MBPPLoader import MBPPLoader
 # from chat_gpt_generated_testcases import get_testcases
