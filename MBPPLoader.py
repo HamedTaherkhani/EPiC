@@ -1,20 +1,20 @@
 import re
 import pickle
 class MBPPLoader:
-    def __init__(self, mbpp_random_instances):
+    def __init__(self, mbpp_random_instances=None):
         from datasets import load_dataset
         self.dataset = []
-        dataset_full = load_dataset("google-research-datasets/mbpp")
+        dataset_full = load_dataset("google-research-datasets/mbpp", "sanitized")
         for key in dataset_full.keys():
             for item in dataset_full[key]:
                 self.dataset.append(item)
         if mbpp_random_instances is not None:
             self.dataset = [dd for index, dd in enumerate(self.dataset) if index in mbpp_random_instances]
-        self.prompts = [a['text'] for a in self.dataset]
-        self.tests = ["\n".join(a['test_list'] + a['challenge_test_list']) for a in self.dataset]
+        self.prompts = [a['prompt'] for a in self.dataset]
+        self.tests = ["\n".join(a['test_list']) for a in self.dataset]
+        self.func_names = []
         # self.funcname = [a['test_list'][0].split("(")[0].replace('assert', '').replace(' ', '') for a in self.dataset]
         self.prompts_ = []
-        # print(self.dataset)
         for index, a in enumerate(self.dataset):
             entry = re.findall(r'def .*\(.*\)', a['code'])
             if len(entry) == 1:
@@ -25,32 +25,85 @@ class MBPPLoader:
 
             ##correct func name
             to_be_replaces = entry.split("(")[0].replace("def ", '')
-            # print(to_be_replaces)
-            func_name = a['test_list'][0].split("(")[0].replace('assert', '').replace(' ', '')
-            entry = entry.replace(to_be_replaces, func_name)
+            splitted = a['test_list'][0].split("(")
+            # print(a['test_list'][0].split("("))
+            # print("-----------------------------------")
 
-            entry += ":\n  \"\"\"" + a['text'] + "\"\"\""
+            if index == 82:
+                func_name = "Diff"
+            elif index == 99:
+                func_name = "text_match_three"
+            elif index == 113:
+                func_name = "is_perfect_square"
+            elif index == 149:
+                func_name = "volume_sphere"
+            elif index == 152:
+                func_name = "surfacearea_sphere"
+            elif index == 165:
+                func_name = "multiply_num"
+            elif index == 176:
+                func_name = "common_in_nested_lists"
+            elif index == 185:
+                func_name = "angle_complex"
+            elif index == 196:
+                func_name = "zero_count"
+            elif index == 198:
+                func_name = "circle_circumference"
+            elif index == 199:
+                func_name = "extract_singly"
+            elif index == 207:
+                func_name = "area_polygon"
+            elif index == 224:
+                func_name = "larg_nnum"
+            elif index == 225:
+                func_name = "lateralsuface_cylinder"
+            elif index == 235:
+                func_name = "babylonian_squareroot"
+            elif index == 237:
+                func_name = "harmonic_sum"
+            elif index == 261:
+                func_name = "volume_cylinder"
+            elif index == 282:
+                func_name = "count_binary_seq"
+            elif index == 292:
+                func_name = "volume_cone"
+            elif index == 420:
+                func_name = "similar_elements"
+            elif index == 424:
+                func_name = "find_char_long"
+            else:
+                func_name = splitted[0].replace('assert', '').replace(' ', '')
+            self.func_names.append(func_name)
+            entry = entry.replace(to_be_replaces, func_name)
+            assert func_name in a['test_list'][0]
+            entry += ":\n  \"\"\"" + a['prompt'] + "\"\"\""
             self.prompts_.append(entry)
 
     def get_generated_testcases(self):
-        with open('testcases/mbpp_generated_testcases', 'rb') as fp:
+        import os
+        script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
+        rel_path = "testcases/mbpp_generated_testcases"
+        abs_file_path = os.path.join(script_dir, rel_path)
+        with open(abs_file_path, 'rb') as fp:
             item_list = pickle.load(fp)
         def filter_list(l):
             temp = []
             for i in l:
                 if 'assert False' in i or 'assert True' in i:
-                    print(i)
-                    print(1)
                     continue
                 temp.append(i)
-            return temp[:5]
+            return temp[:10]
         item_list = map(filter_list, item_list)
         return list(item_list)
+
     def get_prompts(self):
         return self.prompts_
 
     def get_tests(self):
         return self.tests
+
+    def get_func_names(self):
+        return self.func_names
 
     def get_dataset(self):
         return self.dataset
