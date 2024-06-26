@@ -17,9 +17,9 @@ class GPTRunner:
     def __init__(self):
         super(GPTRunner, self).__init__()
 
-    def run_experiment_gensim(self, first_generation_openai=False, instances=None, population_size=5, version=1, dataset_choice=1):
+    def run_experiment_gensim(self, instances=None, population_size=5, version=1, dataset_choice=1, seed=137) -> int:
         '''
-
+        :param seed:
         :param first_generation_openai:
         :param instances:
         :param with_original_testcases: if true the intermediate evaluation is executed on the original test cases.
@@ -42,7 +42,7 @@ class GPTRunner:
             dataset = [hh['prompt'] for hh in human_eval['test']]
             number_of_tests = len(dataset)
         else:
-            mbpp_loader = MBPPLoader(None)
+            mbpp_loader = MBPPLoader()
             final_test_cases = mbpp_loader.get_tests()
             generated_testcases = mbpp_loader.get_generated_testcases()
             dataset = mbpp_loader.get_prompts()
@@ -53,15 +53,17 @@ class GPTRunner:
         # print('final test cases **********************')
         # print(final_test_cases)
         if version == 1:
-            run_genetic_algorithm_gensim_(codeLLama_tokenizer=None,
-                                          codeLLama_model=None,
-                                          magic_coder=None, final_test_cases=final_test_cases,
-                                          generated_testcases=generated_testcases, dataset=dataset,
-                                          number_of_tests=number_of_tests,
-                                          model_to_test=2,
-                                          gpt_client=gpt_client,
-                                          population_size=population_size,
-                                          dataset_choice=dataset_choice)
+            final_pass = run_genetic_algorithm_gensim_(codeLLama_tokenizer=None,
+                                                       codeLLama_model=None,
+                                                       magic_coder=None, final_test_cases=final_test_cases,
+                                                       generated_testcases=generated_testcases, dataset=dataset,
+                                                       number_of_tests=number_of_tests,
+                                                       model_to_test=2,
+                                                       gpt_client=gpt_client,
+                                                       population_size=population_size,
+                                                       dataset_choice=dataset_choice,
+                                                       seed=seed)
+            return final_pass
         # else:
         #     run_genetic_algorithm_gensim_v2(base_prompts_re=first_generation_prompts_refactored,
         #                                     codeLLama_tokenizer=None,

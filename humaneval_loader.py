@@ -44,9 +44,9 @@ class HumanEvalLoader:
         with open('testcases/humaneval_generated_testcases', 'rb') as fp:
             itemlist = pickle.load(fp)
         if self.instances:
-            items = [item[:8] for index, item in enumerate(itemlist) if index in self.instances]
+            items = [item[:2] for index, item in enumerate(itemlist) if index in self.instances]
         else:
-            items = [item[:8] for index, item in enumerate(itemlist)]
+            items = [item[:2] for index, item in enumerate(itemlist)]
         return items
 
     def load_cod_eval(self):
