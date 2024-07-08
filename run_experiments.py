@@ -21,6 +21,7 @@ experiments = {
     8: 'genetic-gpt4-gensim-v2',
     9: 'genetic-gpt4-gensim-10-times',
     10: 'genetic-gpt4-gensim-mbpp',
+    11: 'genetic-gpt4-gpt4'
 }
 print(__name__)
 if __name__ == '__main__':
@@ -61,6 +62,8 @@ if __name__ == '__main__':
         print(f'the average pass@1 is: {sum(results)/len(results)}')
     elif experiment_id == 10:
         GPTRunner().run_experiment_gensim(instances=None, population_size=5, dataset_choice=2)
+    elif experiment_id == 11:
+        GPTRunner().run_experiment_gensim(instances=human_eval_instances, population_size=5, mutation_tool=2)
     else:
         print("Invalid experiment")
     f.close()

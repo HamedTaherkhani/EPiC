@@ -24,7 +24,7 @@ from multiprocessing import Pool
 from itertools import repeat
 from itertools import product
 from gensimutils import mutate_sentence, mutate_prompt
-max_response_length = 6000
+max_response_length = 600
 def f(a_test, candidates):
     print(a_test)
     print(candidates)
@@ -96,8 +96,8 @@ def process_api_prompt(res, a_candidate):
     f = res.find("Explanation")
     e = res.find("End")
     res = res[f + 11:e]
-    if len(res) > max_response_length + 1:
-        res = res[0:max_response_length]
+    # if len(res) > max_response_length + 1:
+    #     res = res[0:max_response_length]
     exp = [m.start() for m in re.finditer(special_token, a_candidate)]
     if len(exp) == 0:
         exp = [m.start() for m in re.finditer("'''", a_candidate)]
@@ -114,6 +114,19 @@ def process_api_prompt(res, a_candidate):
 headers = {
     'Content-Type': 'text/plain'
 }
+
+
+def mutate_prompt_gpt(a_candidate, gpt_client):
+    query2 = "You are a mutation tool. This is a python function and it's description. Please mutate the description by enhancing it's clarity and comprehension for sophisticated language models. Please put the changed description between #Explanation and #End. Use at most 600 words."
+    response = gpt_client.chat.completions.create(model=openai_model,
+                                                  messages=[{"role": "system",
+                                                             "content": query2},
+                                                            {"role": "user",
+                                                             "content": a_candidate}],
+                                                  temperature=0.8,
+                                                  max_tokens=750,
+                                                  )
+    return process_api_prompt(response.choices[0].message.content, a_candidate)
 
 
 def mutate_prompts_api(a_candidate, mutation_llm):
@@ -164,25 +177,6 @@ def crossover_prompts_api(cands, mutation_llm):
     payload = payload.replace("Hello", prompt_changed)
     response = requests.request("POST", url, headers=headers, data=payload).text
     return process_api_prompt(response, two_candidates[0])
-
-
-def mutate_and_return_candidate(cands, generate_text):
-    a_candidate = choose_candidates(cands, 1)[0]
-    # print(a_candidate)
-    query2 = f"Change the explanation of the function to ensure clarity and comprehension for sophisticated language models. Please put the explanation after # Explanation: and before # End .\n" + a_candidate
-    # print(query2)
-    res = generate_text(query2)[0]['generated_text']
-    llama_prompts_final = process_prompt(res, a_candidate)
-    return llama_prompts_final
-
-
-def crossover_and_return_candidate(cands, generate_text):
-    two_candidates = choose_candidates(cands, 2)
-    PROMPT = 'Merge the first explanation and the second explanation to have a new explanation for the function. Please put the new explanation after # Explanation: and before # End .\n' + 'first explanation:\n' + \
-             two_candidates[0] + 'second explanation:\n' + two_candidates[1]
-    res = generate_text(PROMPT)[0]['generated_text']
-    llama_prompts_final = process_prompt(res, two_candidates[0])
-    return llama_prompts_final
 
 
 def validate_prompt(prompt):
@@ -412,6 +406,7 @@ def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, e
         # print('fillings:')
         # print(fillings)
         time_test.append(time.time() - e)
+        return fillings
         # for key,item in results[1].items():
         #     if item[0][1]['passed']:
         #         passed_fillings[item[0][1]['task_id']] = fillings[item[0][1]['task_id']][0]
@@ -701,7 +696,7 @@ def select_final_prompts(base_prompts_re, dataset):
     return chosen_prompts
 
 
-def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, dataset, number_of_tests=164, model_to_test=0, gpt_client=None, population_size=5, dataset_choice=1, seed=137):
+def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, dataset, number_of_tests=164, model_to_test=0, gpt_client=None, population_size=5, dataset_choice=1, seed=137, mutation_tool=1):
 
     random.seed(seed)
     all_generated_promts = []
@@ -858,10 +853,11 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
                 ## mutation
                 selected_candidates_for_mutations = choose_candidates(candidates, number_of_generations_by_mutations)
                 for a_candidate in selected_candidates_for_mutations:
-                    final_sentence = mutate_prompt(a_candidate)
+                    if mutation_tool == 1:
+                        final_sentence = mutate_prompt(a_candidate)
+                    else:
+                        final_sentence = mutate_prompt_gpt(a_candidate, gpt_client)
                     next_generation_prompts.append(final_sentence)
-                # print(f'nexxxxxxxxxxxxxxxxxxxxxxxxxx for {idx}')
-                # print(next_generation_prompts)
                 base_prompts_re[idx] = next_generation_prompts
 
             d = time.time()
@@ -871,17 +867,19 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
         chosen_prompts = select_final_prompts(base_prompts_re, dataset)  ##here
         ## evaluation
         if run_evaluation_each_generation:
-            run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
+            final_code = run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
                                  dataset, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
                                  time_test, gpt_client)
         iteration += 1
     if not run_evaluation_each_generation:
-        run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
+        final_code = run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
                              dataset, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
                              time_test, gpt_client)
     # print(passed_codes)
-    print('Final codes:-----------------------------------')
+    print('Final prompts:-----------------------------------')
     print(chosen_prompts)
+    print('Final codes:---------------------------------------')
+    print(final_code)
     print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation, time_next_make_generation,
                         time_test, time_total_per_instance)
     return evaluations[-1][0]['pass@1']

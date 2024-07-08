@@ -17,7 +17,7 @@ class GPTRunner:
     def __init__(self):
         super(GPTRunner, self).__init__()
 
-    def run_experiment_gensim(self, instances=None, population_size=5, version=1, dataset_choice=1, seed=137) -> int:
+    def run_experiment_gensim(self, instances=None, population_size=5, version=1, dataset_choice=1, seed=137, mutation_tool=1) -> int:
         '''
         :param seed:
         :param first_generation_openai:
@@ -27,6 +27,7 @@ class GPTRunner:
         :param population_size:
         :param version:
         :param dataset_choice: 1 = humaneval, 2 = mbpp
+        :param mutation_tool: 1 = local, 2 = LLM
         :return:
 
         '''
@@ -62,7 +63,8 @@ class GPTRunner:
                                                        gpt_client=gpt_client,
                                                        population_size=population_size,
                                                        dataset_choice=dataset_choice,
-                                                       seed=seed)
+                                                       seed=seed,
+                                                       mutation_tool=mutation_tool)
             return final_pass
         # else:
         #     run_genetic_algorithm_gensim_v2(base_prompts_re=first_generation_prompts_refactored,
