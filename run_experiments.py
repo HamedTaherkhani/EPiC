@@ -64,6 +64,13 @@ if __name__ == '__main__':
         GPTRunner().run_experiment_gensim(instances=None, population_size=5, dataset_choice=2)
     elif experiment_id == 11:
         GPTRunner().run_experiment_gensim(instances=human_eval_instances, population_size=5, mutation_tool=2)
-    else:
+    elif experiment_id == 12:
+        results = []
+        random_choices = random.choices(range(100000), k=10)
+        for i in random_choices:
+            results.append(GPTRunner().run_experiment_gensim(instances=None, population_size=5, seed=i, dataset_choice=2))
+            print(results)
+        print(results)
+        print(f'the average pass@1 is: {sum(results) / len(results)}')
         print("Invalid experiment")
     f.close()

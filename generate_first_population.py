@@ -46,13 +46,13 @@ def get_completion(client, prompt, population_size, dataset_choice=1):
             1- Add input and output types of the function to the description.
             2- Elaborate the description so that it is understandable for large language models.
             3- Keep the original testcases and add 3 test cases to the description to cover the edge cases. Do not separate the generated testcases and the original ones.
-            Keep the structure of the function and add the description as a comment in the function. Use at most 500 words. Do not implement the code\n"""
+            Keep the structure of the function and add the description as a comment in the function. Use at most 600 words. Do not implement the code\n"""
         max_tokens = 700
     else:
         prompt1 = """Please rewrite the function description based on these instructions:
             1- Add input and output types of the function to the description.
             2- Elaborate the description so that it is understandable for large language models.
-            Keep the structure of the function and add the description as a comment in the function. Use at most 250 words. Do not implement the code\n"""
+            Keep the structure of the function and add the description as a comment in the function. Use at most 350 words. Do not implement the code\n"""
         max_tokens = 400
     response = client.chat.completions.create(
         model=openai_model,
