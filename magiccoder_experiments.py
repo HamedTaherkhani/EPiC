@@ -1,7 +1,6 @@
 from transformers import pipeline
 import torch
 from chat_gpt_prompts import get_initial_processed_gpt_prompts
-from chat_gpt_prompts_distilled import refactor_prompts,get_gpt_prompts_distilled
 from humaneval_loader import HumanEvalLoader
 from utils import run_genetic_algorithm, run_genetic_algorithm_gensim, run_genetic_algorithm_gensim_
 from openai import OpenAI

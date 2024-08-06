@@ -3,13 +3,8 @@ import torch
 from openai import OpenAI
 import os
 import json
-from chat_gpt_prompts import get_initial_processed_gpt_prompts
-from chat_gpt_prompts_distilled import refactor_prompts,get_gpt_prompts_distilled
-from chat_gpt_prompts_distilled_ten_generation import refactor_prompts, get_gpt_prompts_distilled_ten
 from humaneval_loader import HumanEvalLoader
 from MBPPLoader import MBPPLoader
-# from chat_gpt_generated_testcases import get_testcases
-from test_cases import get_testcases
 from utils import run_genetic_algorithm, run_genetic_algorithm_gensim_, run_genetic_algorithm_gensim_v2
 
 
