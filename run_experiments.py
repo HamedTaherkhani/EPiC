@@ -21,7 +21,8 @@ experiments = {
     8: 'genetic-gpt4-gensim-v2',
     9: 'genetic-gpt4-gensim-10-times',
     10: 'genetic-gpt4-gensim-mbpp',
-    11: 'genetic-gpt4-gpt4'
+    11: 'genetic-gpt4-gpt4',
+    12: 'genetic-gpt4-gensim-mbpp-10-times'
 }
 print(__name__)
 if __name__ == '__main__':
