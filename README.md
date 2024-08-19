@@ -24,7 +24,8 @@ Create a `.env` file in the root directory of the project and set the following 
 
 ```env
 experiment=<experiment_id>
-human_eval_instances=<json_encoded_human_eval_instances>
+openai_key=<openai_key>
+openai_model=<openai_model>
 ```
 
 ### Available Experiments
@@ -52,22 +53,13 @@ python run_experiments.py
 
 ### Example `.env` File
 ```env
-experiment=1
-human_eval_instances='["instance1", "instance2", "instance3"]'
+experiment=9
+openai_model=gpt-4o
+openai_key=your_key
 ```
 
 ## Generating Test Cases
 To generate test cases, use the `testcase_generator.py` script. This script can generate test cases for both the MBPP and HumanEval datasets.
-
-### Generating Test Cases for MBPP
-```bash
-python testcase_generator.py --mbpp
-```
-
-### Generating Test Cases for HumanEval
-```bash
-python testcase_generator.py --humaneval
-```
 
 ## Citation
 If you use this code, please cite our paper:
