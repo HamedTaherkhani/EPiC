@@ -18,11 +18,10 @@ experiments = {
     5: 'genetic-magicoder-llama2-7b',
     6: 'genetic-gpt4-gensim',
     7: 'genetic-gpt4-gensim-ten_population',
-    8: 'genetic-gpt4-gensim-v2',
-    9: 'genetic-gpt4-gensim-10-times',
-    10: 'genetic-gpt4-gensim-mbpp',
-    11: 'genetic-gpt4-gpt4',
-    12: 'genetic-gpt4-gensim-mbpp-10-times'
+    8: 'genetic-gpt4-gensim-10-times',
+    9: 'genetic-gpt4-gensim-mbpp',
+    10: 'genetic-gpt4-gpt4',
+    11: 'genetic-gpt4-gensim-mbpp-10-times'
 }
 print(__name__)
 if __name__ == '__main__':
@@ -38,22 +37,23 @@ if __name__ == '__main__':
     sys.stdout = f
     # sys.stdout = orig_stdout
     if experiment_id == 1:
-        MagicCoderRunner().run_experiment_llama70(human_eval_instances)
+        raise NotImplementedError
+        # MagicCoderRunner().run_experiment_llama70(human_eval_instances)
     elif experiment_id == 2:
-        CodellamaExperiments().run_experiment(human_eval_instances)
+        raise NotImplementedError
+        # CodellamaExperiments().run_experiment(human_eval_instances)
     elif experiment_id == 3:
         MagicCoderRunner().run_experiments_gensim(instances=human_eval_instances)
     elif experiment_id == 4:
         CodellamaExperiments().run_experiments_gensim(instances=human_eval_instances)
     elif experiment_id == 5:
-        MagicCoderRunner().run_experiment_llama7(human_eval_instances)
+        raise NotImplementedError
+        # MagicCoderRunner().run_experiment_llama7(human_eval_instances)
     elif experiment_id == 6:
         GPTRunner().run_experiment_gensim(instances=human_eval_instances, population_size=5)
     elif experiment_id == 7:
         GPTRunner().run_experiment_gensim(instances=human_eval_instances, population_size=10)
     elif experiment_id == 8:
-        GPTRunner().run_experiment_gensim(instances=human_eval_instances, population_size=5, version=2)
-    elif experiment_id == 9:
         results = []
         random_choices = random.choices(range(100000), k=10)
         for i in random_choices:
@@ -61,11 +61,11 @@ if __name__ == '__main__':
             print(results)
         print(results)
         print(f'the average pass@1 is: {sum(results)/len(results)}')
-    elif experiment_id == 10:
+    elif experiment_id == 9:
         GPTRunner().run_experiment_gensim(instances=None, population_size=5, dataset_choice=2)
-    elif experiment_id == 11:
+    elif experiment_id == 10:
         GPTRunner().run_experiment_gensim(instances=human_eval_instances, population_size=5, mutation_tool=2)
-    elif experiment_id == 12:
+    elif experiment_id == 11:
         results = []
         random_choices = random.choices(range(100000), k=10)
         for i in random_choices:

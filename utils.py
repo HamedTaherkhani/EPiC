@@ -291,7 +291,7 @@ def get_gpt_code_completion(gpt_client, prompt):
     return filling
 
 def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama_tokenizer, codeLLama_model, magic_coder, human_eval,
-                                         model_to_test=0, prompt_index=None, gpt_client=None, generated_codes_human_eval=None):
+                                         model_to_test=0, prompt_index=None, gpt_client=None):
     if not validate_prompt(
             prompt):
         return 0, 0
@@ -313,9 +313,6 @@ def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama
             'generated_text']
         filling = process_a_code_magic_coder(filling, prompt_index,human_eval)
     elif model_to_test == 2:
-        if generated_codes_human_eval is not None:
-            filling = generated_codes_human_eval[prompt_index][0]
-        else:
             filling = get_gpt_code_completion(gpt_client, prompt)
     ##
     candidate = [filling]
@@ -764,7 +761,7 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             codeLLama_model=codeLLama_model,
             magic_coder=magic_coder,
             human_eval=dataset,
-            gpt_client=gpt_client, generated_codes_human_eval=None)
+            gpt_client=gpt_client)
         time_evaluation[iteration].append(round(time.time() - time_one))
         print(idx)
         print(passat1)
@@ -909,116 +906,6 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
                         time_test, time_total_per_instance)
     save_results(dataset_choice, dataset, final_code, errors_index, chosen_prompts, final_test_cases, seed)
     return evaluations[-1][0]['pass@1']
-    # print('successful prompts **********************************************************')
-    # print(base_prompts_re)
-    # print('successful codes ****************************************************************')
-    # print(passed_codes)
-
-
-
-def run_genetic_algorithm_gensim_v2(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder,
-                                    final_test_cases, generated_testcases, human_eval, number_of_tests=164,
-                                    model_to_test=0, with_original_testcases=False, gpt_client=None,
-                                    population_size=5):
-    all_generated_promts = []
-    # all_generated_promts = []
-    evaluations = []
-    import os
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    import warnings
-    warnings.filterwarnings("ignore")
-    iteration = 0
-    run_evaluation_each_generation = True
-    ## time management
-    time_total_per_instance = []
-    time_evaluation = []
-    time_test = []
-    time_next_make_generation = []
-    number_of_supposed_passed_codes = []
-    # if model_to_test == 1:
-    #     base_prompts_re = base_prompts_re_codemagic.copy()
-    first_generation = base_prompts_re.copy()
-    passed_codes = [False for i in range(number_of_tests)]
-    while (not stop_criteria_met(evaluations)):
-        time_total_per_instance.append([])
-        time_evaluation.append([])
-        time_next_make_generation.append([])
-
-        all_generated_promts.append(base_prompts_re.copy())
-        number_of_supposed_passed_codes.append(0)
-        for idx, a_prompt_set in tqdm(enumerate(base_prompts_re[0:number_of_tests])):  ##here
-            print(idx)
-            if len(a_prompt_set) == 1:
-                continue
-            if iteration != 0:
-                mutated_prompts = []
-                if population_size == 5:
-                    number_of_generations_by_mutations = 4
-                    straight_of_generations_by_mutations = 1
-                elif population_size == 10:
-                    number_of_generations_by_mutations = 8
-                    straight_of_generations_by_mutations = 2
-                ## straight select
-                selected = random.choices(a_prompt_set, k=straight_of_generations_by_mutations)
-                mutated_prompts.extend(selected)
-
-                ## mutation
-                selected_candidates_for_mutations = random.choices(a_prompt_set, k=number_of_generations_by_mutations)
-                for a_candidate in selected_candidates_for_mutations:
-                    splits = a_candidate.split(special_token)
-                    if len(splits) != 5:
-                        alternate_sentences = mutate_sentence(splits[1], num_versions=1,
-                                                              similarity_threshold=0.5)
-                        final_sentence = splits[0] + special_token + alternate_sentences[0] + special_token + \
-                                         splits[2]
-                    else:
-                        alternate_sentences1 = mutate_sentence(splits[1], num_versions=1,
-                                                               similarity_threshold=0.5)
-                        alternate_sentences2 = mutate_sentence(splits[3], num_versions=1,
-                                                               similarity_threshold=0.5)
-                        final_sentence = splits[0] + special_token + alternate_sentences1[0] + special_token + \
-                                         splits[
-                                             2] + special_token + alternate_sentences2[0] + special_token + splits[
-                                             4]
-                    mutated_prompts.append(final_sentence)
-            else:
-                mutated_prompts = a_prompt_set
-            # print(f'nexxxxxxxxxxxxxxxxxxxxxxxxxx for {idx}')
-            # print(next_generation_prompts)
-            # base_prompts_re[idx] = mutated_prompts
-
-            for single_prompt in mutated_prompts:
-                passed = False
-                passat1, filling = evaluate_prompt_on_generated_prompts(
-                    generated_test_cases=generated_testcases[idx][0:4],
-                    prompt=single_prompt, model_to_test=model_to_test,
-                    prompt_index=idx,
-                    codeLLama_tokenizer=codeLLama_tokenizer,
-                    codeLLama_model=codeLLama_model,
-                    magic_coder=magic_coder,
-                    human_eval=human_eval,
-                    gpt_client=gpt_client)
-
-                if passat1 == 1:
-                    base_prompts_re[idx] = [single_prompt]
-                    passed_codes[idx] = filling
-                    print(
-                        f'PAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASED for idx {idx}')
-                    break
-
-        chosen_prompts = [rr[0] for rr in base_prompts_re[0:number_of_tests]]  ##here
-        ## evaluation
-        if run_evaluation_each_generation:
-            run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations,
-                                 final_test_cases,
-                                 human_eval, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
-                                 time_test, gpt_client)
-        ## evaluations
-        iteration += 1
-        for idx, instance in enumerate(base_prompts_re):
-            if len(instance) != 1:
-                base_prompts_re[idx] = first_generation[idx]
-
     # print('successful prompts **********************************************************')
     # print(base_prompts_re)
     # print('successful codes ****************************************************************')

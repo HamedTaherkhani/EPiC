@@ -2,7 +2,7 @@ from transformers import pipeline
 import torch
 from chat_gpt_prompts import get_initial_processed_gpt_prompts
 from humaneval_loader import HumanEvalLoader
-from utils import run_genetic_algorithm, run_genetic_algorithm_gensim, run_genetic_algorithm_gensim_
+from utils import run_genetic_algorithm, run_genetic_algorithm_gensim_
 from openai import OpenAI
 import re
 
@@ -56,7 +56,7 @@ class MagicCoderRunner:
 
     def run_experiment_llama70(self, instances=None):
         import os
-        os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
+        # os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
         magic_coder = self.load_magiccoder()
         gpt_prompts = get_initial_processed_gpt_prompts()
         human_eval_loader = HumanEvalLoader()
@@ -75,7 +75,7 @@ class MagicCoderRunner:
 
     def run_experiment_llama7(self, instances=None):
         import os
-        os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
+        # os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
         magic_coder = self.load_magiccoder()
         gpt_prompts = get_initial_processed_gpt_prompts()
         human_eval_loader = HumanEvalLoader(instances)
@@ -94,7 +94,7 @@ class MagicCoderRunner:
 
     def run_experiments_gensim(self, instances=None):
         import os
-        os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
+        # os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
         magic_coder = self.load_magiccoder()
         human_eval_loader = HumanEvalLoader(instances)
         human_eval = human_eval_loader.get_human_eval()
