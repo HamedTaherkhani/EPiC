@@ -38,11 +38,10 @@ The available experiments are defined in the `run_experiments.py` script. Here a
 5. `genetic-magicoder-llama2-7b`
 6. `genetic-gpt4-gensim`
 7. `genetic-gpt4-gensim-ten_population`
-8. `genetic-gpt4-gensim-v2`
-9. `genetic-gpt4-gensim-10-times`
-10. `genetic-gpt4-gensim-mbpp`
-11. `genetic-gpt4-gpt4`
-12. `genetic-gpt4-gensim-mbpp-10-times`
+8. `genetic-gpt4-gensim-10-times`
+9. `genetic-gpt4-gensim-mbpp`
+10. `genetic-gpt4-gpt4`
+11. `genetic-gpt4-gensim-mbpp-10-times`
 
 ### Running a Specific Experiment
 To run a specific experiment, set the `experiment` variable in the `.env` file to the desired experiment ID. Then run:
@@ -65,10 +64,13 @@ To generate test cases, use the `testcase_generator.py` script. This script can 
 If you use this code, please cite our paper:
 
 ```bibtex
-@article{taherkhani2025epic,
-  title={EPiC: Cost-effective Search-based Prompt Engineering of LLMs for Code Generation},
-  author={Taherkhani, Hamed and Sepindband, Melika and Pham, Hung Viet and Wang, Song and Hemmati, Hadi},
-  journal={arXiv preprint arXiv:2308.12950},
-  year={2025}
+@misc{taherkhani2024epiccosteffectivesearchbasedprompt,
+      title={EPiC: Cost-effective Search-based Prompt Engineering of LLMs for Code Generation}, 
+      author={Hamed Taherkhani and Melika Sepindband and Hung Viet Pham and Song Wang and Hadi Hemmati},
+      year={2024},
+      eprint={2408.11198},
+      archivePrefix={arXiv},
+      primaryClass={cs.SE},
+      url={https://arxiv.org/abs/2408.11198}, 
 }
 ```
