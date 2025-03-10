@@ -8,9 +8,9 @@ from MBPPLoader import MBPPLoader
 from utils import run_genetic_algorithm_gensim_
 from BigCodeLoader import BigCodeLoader
 
-class GPTRunner:
+class FireworksExperiments(object):
     def __init__(self):
-        super(GPTRunner, self).__init__()
+        super(FireworksExperiments, self).__init__()
 
     def run_experiment_gensim(self,experiment_to_run, instances=None, population_size=5, dataset_choice=1, seed=137, mutation_tool=1) -> int:
         '''
@@ -26,34 +26,31 @@ class GPTRunner:
 
         '''
 
-        key = os.getenv('openai_key')
-        gpt_client = OpenAI(api_key=key)
-        model_name = 'o3-mini-2025-01-31'
+        model_name = 'deepseek-v3'
         if dataset_choice == 1:
             human_eval_loader = HumanEvalLoader(instances)
             human_eval = human_eval_loader.get_human_eval()
             final_test_cases = human_eval_loader.get_final_test_cases()
             # generated_testcases = get_testcases()
-            generated_testcases = human_eval_loader.get_generated_test_cases_o3mini()
+            generated_testcases = human_eval_loader.get_generated_test_cases_deepseek()
             dataset = [hh['prompt'] for hh in human_eval['test']]
             number_of_tests = len(dataset)
         elif dataset_choice == 2:
             mbpp_loader = MBPPLoader()
             final_test_cases = mbpp_loader.get_tests()
-            generated_testcases = mbpp_loader.get_generated_testcases_o3mini()
+            generated_testcases = mbpp_loader.get_generated_testcases_deepseek()
             dataset = mbpp_loader.get_prompts()
             number_of_tests = len(dataset)
         else:
             loader = BigCodeLoader(hard=1)
             dataset = loader.get_prompts()
             number_of_tests = len(dataset)
-            generated_testcases = loader.get_generated_tests_o3()
+            generated_testcases = loader.get_generated_tests_deepseek()
             final_test_cases = loader.get_tests()
 
-        # dataset = dataset[137:141]
-        # final_test_cases = final_test_cases[137:141]
-        # generated_testcases = generated_testcases[137:141]
-        # number_of_tests = len(dataset)
+        # dataset = dataset[42:45]
+        # final_test_cases = final_test_cases[42:45]
+        # generated_testcases = generated_testcases[42:45]
         print(len(dataset))
         print(len(final_test_cases))
         print(len(generated_testcases))
@@ -64,8 +61,8 @@ class GPTRunner:
                                                    magic_coder=None, final_test_cases=final_test_cases,
                                                    generated_testcases=generated_testcases, dataset=dataset,
                                                    number_of_tests=number_of_tests,
-                                                   model_to_test=2,
-                                                   gpt_client=gpt_client,
+                                                   model_to_test=5,
+                                                   # gpt_client=gpt_client,
                                                    population_size=population_size,
                                                    dataset_choice=dataset_choice,
                                                    seed=seed,

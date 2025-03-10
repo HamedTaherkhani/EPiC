@@ -4,9 +4,10 @@ from evaluate import load
 import pickle
 
 
+
 class HumanEvalLoader:
     def __init__(self, instances=None):
-        self.human_eval = load_dataset("openai_humaneval")
+        self.human_eval = load_dataset("evalplus/humanevalplus")
         self.instances = instances
         if instances is not None:
             if len(instances) > 0:
@@ -47,6 +48,43 @@ class HumanEvalLoader:
             items = [item[:4] for index, item in enumerate(itemlist) if index in self.instances]
         else:
             items = [item[:4] for index, item in enumerate(itemlist)]
+        return items
+
+    def get_generated_test_cases_o3mini(self):
+        with open('testcases/humaneval_generated_testcases_o3-mini', 'rb') as fp:
+            itemlist = pickle.load(fp)
+        if self.instances:
+            items = [item for index, item in enumerate(itemlist) if index in self.instances]
+        else:
+            items = [item for index, item in enumerate(itemlist)]
+        return items
+
+    def get_generated_test_cases_llama(self):
+        with open('testcases/humaneval_generated_testcases_llama3', 'rb') as fp:
+            itemlist = pickle.load(fp)
+        print(f'len genertated tests: len(itemlist)')
+        if self.instances:
+            items = [item[:4] for index, item in enumerate(itemlist) if index in self.instances]
+        else:
+            items = [item[:4] for index, item in enumerate(itemlist)]
+        return items
+
+    def get_generated_test_cases_deepseek(self):
+        with open('testcases/humaneval_generated_testcases_deepseek-v3', 'rb') as fp:
+            itemlist = pickle.load(fp)
+        if self.instances:
+            items = [item for index, item in enumerate(itemlist) if index in self.instances]
+        else:
+            items = [item[:5] for index, item in enumerate(itemlist)]
+        return items
+
+    def get_generated_test_cases_claude(self):
+        with open('testcases/humaneval_generated_testcases_claude-3.7-sonnet', 'rb') as fp:
+            itemlist = pickle.load(fp)
+        if self.instances:
+            items = [item for index, item in enumerate(itemlist) if index in self.instances]
+        else:
+            items = [item[:5] for index, item in enumerate(itemlist)]
         return items
 
     def load_cod_eval(self):

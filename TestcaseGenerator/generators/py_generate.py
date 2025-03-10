@@ -236,11 +236,11 @@ assert add3Numbers(-3, -2, -1) == -6
 assert add3Numbers(0, 0, 0) == 0
 """
 
-PY_TEST_GENERATION_COMPLETION_INSTRUCTION = f"""You are an AI coding assistant that can write unique, diverse, and intuitive unit tests for functions given the signature and docstring.
+PY_TEST_GENERATION_COMPLETION_INSTRUCTION = f"""You are an AI coding assistant that can write unique, diverse, and intuitive unit tests for functions given the signature and docstring. Use step by step reasoning to validate the test cases to ensure that the tests have the correct expected output. Write the 5 most useful tests.
 
 {PY_TEST_GENERATION_FEW_SHOT}"""
 
-PY_TEST_GENERATION_CHAT_INSTRUCTION = """You are an AI coding assistant that can write unique, diverse, and intuitive unit tests for functions given the signature and docstring."""
+PY_TEST_GENERATION_CHAT_INSTRUCTION = """You are an AI coding assistant that can write unique, diverse, and intuitive unit tests for functions given the signature and docstring. Use step by step reasoning to validate each test case separately to ensure that the all of them have the correct expected output. Write 5 useful diverse tests. Write the final validated tests inside $$$$ tags"""
 
 
 class PyGenerator(Generator):

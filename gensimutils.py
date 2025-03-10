@@ -144,7 +144,8 @@ def get_next_position(total_synonym_array, position_array, last_position):
 
 
 def mutate_prompt(a_candidate):
-    splits = a_candidate.split(special_token)
+    prompt = a_candidate[0]
+    splits = prompt.split(special_token)
     if len(splits) != 5:
         alternate_sentences = mutate_sentence(splits[1], num_versions=1,
                                               similarity_threshold=0.5)

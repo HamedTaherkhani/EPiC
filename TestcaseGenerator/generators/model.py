@@ -1,5 +1,9 @@
 from typing import List, Union, Optional, Literal
 import dataclasses
+import anthropic
+import os
+import requests
+import json
 
 from tenacity import (
     retry,
@@ -62,11 +66,11 @@ def gpt_chat(
     response = openai.ChatCompletion.create(
         model=model,
         messages=[dataclasses.asdict(message) for message in messages],
-        max_tokens=max_tokens,
-        temperature=temperature,
-        top_p=1,
-        frequency_penalty=0.0,
-        presence_penalty=0.0,
+        # max_tokens=max_tokens,
+        # temperature=temperature,
+        # top_p=1,
+        # frequency_penalty=0.0,
+        # presence_penalty=0.0,
         n=num_comps,
     )
     if num_comps == 1:
@@ -89,6 +93,65 @@ class ModelBase():
     def generate(self, prompt: str, max_tokens: int = 1024, stop_strs: Optional[List[str]] = None, temperature: float = 0.0, num_comps=1) -> Union[List[str], str]:
         raise NotImplementedError
 
+class AntropicRequester(ModelBase):
+    def __init__(self, name):
+        self.client = anthropic.Anthropic(api_key=os.getenv("anthropic_key"))
+        self.name = name
+        self.is_chat = True
+    def generate_chat(self, messages, **kwargs):
+        prompt = ''.join([message.content for message in messages])
+        response = self.client.messages.create(
+            model=self.name,
+            max_tokens=4000,
+            # temperature=1,
+            system="You are an expert python developer who writes good test cases.",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt
+                        }
+                    ]
+                }
+            ]
+        )
+        text = response.content[0].text
+        return text
+
+class FireworksAPIRequester(ModelBase):
+    def __init__(self, name):
+        self.name = name
+        self.key = os.getenv("fireworks_key")
+        self.is_chat = True
+    def generate_chat(self, messages, **kwargs):
+        prompt = ''.join([message.content for message in messages])
+        # print(prompt)
+        url = "https://api.fireworks.ai/inference/v1/chat/completions"
+        payload = {
+            "model": f"accounts/fireworks/models/{self.name}",
+            "max_tokens": 8000,
+            # "top_p": 1,
+            # "top_k": 40,
+            "presence_penalty": 0,
+            "frequency_penalty": 0,
+            "temperature": 0,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        }
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.key}"
+        }
+        res = requests.request("POST", url, headers=headers, data=json.dumps(payload))
+        # print(res.json()['choices'][0]['message']['content'])
+        return res.json()['choices'][0]['message']['content']
 
 class GPTChat(ModelBase):
     def __init__(self, model_name: str):
@@ -117,6 +180,10 @@ class GPT4turbo(GPTChat):
 class GPT4o(GPTChat):
     def __init__(self):
         super().__init__("gpt-4o")
+
+class O3mini(GPTChat):
+    def __init__(self):
+        super().__init__("o3-mini")
 
 class GPTDavinci(ModelBase):
     def __init__(self, model_name: str):

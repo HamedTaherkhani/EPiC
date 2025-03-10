@@ -10,23 +10,146 @@ import random
 import numpy as np
 import torch
 import os
-from generate_first_population import generate_first_population_for_instance, generate_first_population_for_instance_v2
+from generate_first_population import generate_first_population_for_instance
+from TestcaseGenerator.executors import executor_factory
+from evaluator import CodeEval
+import anthropic
 import openai
+from function_executor import run_unit_tests_parallel, run_test_cases
+from llamaapi import LlamaAPI
+import os
+import ast
+from typing import List
+from BigCodeLoader import BigCodeLoader
+from dotenv import load_dotenv
+load_dotenv()
+key = os.getenv('openai_key')
+llama_api_key = os.getenv('llama_api_key')
+
+IMPORT_HEADER = "from typing import *\nimport math\nfrom heapq import *\nimport itertools\nimport re\nimport typing\nimport heapq\n_str=str\nimport re\n"
+
+
+def generate_code_llamaapi(model_name, prompt):
+    llama = LlamaAPI(llama_api_key)
+    usage = {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0
+    }
+    api_request_json = {
+        "model": model_name,
+        "max_tokens": 2000,
+        'messages': [{"role": "system",
+                     "content": "You are a python developer that implements the correct code based on the function description provided. You are given one or more functions to implement. Don't delete import statements in the code snippet. Use at most 1000 words."},
+                    {"role": "user",
+                     "content": prompt.replace(
+                         "#SPECIAL_TOKEN", "")}],
+    "stream": False,
+    }
+    try:
+        response = llama.run(api_request_json)
+        response = response.json()
+    except Exception as e:
+        print(e)
+        return prompt, usage
+    content = response['choices'][0]['message']['content']
+    IMPORT_HEADER = "from typing import *\nimport math\nfrom heapq import *\nimport itertools\nimport re\nimport typing\nimport heapq\n_str=str\nimport re\n"
+    ##process
+    try:
+        filling = IMPORT_HEADER + prompt + '\n' + content.split('```')[1].replace('python', '')
+        usage = response['usage']
+    except IndexError:
+        filling = IMPORT_HEADER + prompt
+    return filling, usage
+
+def generate_code_fireworks(model_name, prompt):
+    fire_work_key = os.getenv('fireworks_key')
+    url = "https://api.fireworks.ai/inference/v1/chat/completions"
+    payload = {
+        "model": f"accounts/fireworks/models/{model_name}",
+        "max_tokens": 8000,
+        # "top_p": 1,
+        # "top_k": 40,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "temperature": 0,
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    }
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {fire_work_key}"
+    }
+    res = requests.request("POST", url, headers=headers, data=json.dumps(payload))
+    text = res.json()['choices'][0]['message']['content']
+    usage = res.json()['usage']
+    try:
+        filling = IMPORT_HEADER + prompt + '\n' + text.split('```')[1].replace('python', '')
+    except IndexError:
+        filling = IMPORT_HEADER + text
+        ###
+    return filling, usage
+
+def generate_code_sonnet(model_name, prompt):
+    client = anthropic.Anthropic(api_key=os.getenv("anthropic_key"))
+    usage = {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0
+    }
+    try:
+        time.sleep(1)
+        message = client.messages.create(
+            model=model_name,
+            max_tokens=2000,
+            temperature=0,
+            system="You are an expert python developer",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Implement the right python implementation for this function. Import any necessary libraries and put the implementation between ```python and ``` tags" + prompt
+                        }
+                    ]
+                }
+            ]
+        )
+        text = message.content[0].text
+        usage = {
+            "prompt_tokens": message.usage.input_tokens,
+            "completion_tokens": message.usage.output_tokens,
+            "total_tokens": message.usage.input_tokens + message.usage.output_tokens,
+        }
+        try:
+            filling = IMPORT_HEADER + prompt + '\n' + text.split('```')[1].replace('python', '')
+        except IndexError:
+            filling = IMPORT_HEADER + text
+            ###
+        return filling, usage
+    except Exception as e:
+        time.sleep(10)
+        print('Excetion in sonnet API')
+        print(e)
+        return prompt, usage
+
+
 MUtation_llm = {
     1: 'Lama70b',
     2: 'Lama7b'
 }
 from openai import OpenAI
-from dotenv import load_dotenv
-load_dotenv()
-key = os.getenv('openai_key')
 
-openai_model = os.getenv("openai_model")
 from multiprocessing import Pool
 from itertools import repeat
 from itertools import product
 from gensimutils import mutate_sentence, mutate_prompt
-max_response_length = 600
 def f(a_test, candidates):
     print(a_test)
     print(candidates)
@@ -35,7 +158,7 @@ def f(a_test, candidates):
 
 
 special_token = "#SPECIAL_TOKEN"
-code_eval_metric = load("code_eval")
+code_eval_metric = load("code_eval",timeout=1000)
 import os
 os.environ["HF_ALLOW_CODE_EVAL"] = "1"
 
@@ -51,7 +174,7 @@ def choose_candidates(prompts_set, number=1):
             chosen_prompts.append(temp)
     except ValueError:
         chosen_prompts = random.choices(prompts_set, k=number)
-    return [a[0] for a in chosen_prompts]
+    return chosen_prompts
 
 
 def process_prompt(res, a_candidate):
@@ -117,18 +240,87 @@ headers = {
     'Content-Type': 'text/plain'
 }
 
+def augment_promt(a_candidate):
+    # print(a_candidate)
+    prompt = a_candidate[0]
+    code = a_candidate[2]
+    feedback = a_candidate[3]
+    feeds = ''
+    for idx,ff in enumerate(feedback):
+        feeds += f"""
+#### Test {idx}:
+{ff[2]}
+### Feedback {idx}:
+{ff[1]}
+        """
+    final_prompt = f"""
+    Debug and fix the given code based on the provided test execution feedbacks.
 
-def mutate_prompt_gpt(a_candidate, gpt_client):
-    query2 = "You are a mutation tool. This is a python function and it's description. Please mutate the description by enhancing it's clarity and comprehension for sophisticated language models. Please put the changed description between #Explanation and #End. Use at most 600 words."
-    response = gpt_client.chat.completions.create(model=openai_model,
-                                                  messages=[{"role": "system",
-                                                             "content": query2},
-                                                            {"role": "user",
-                                                             "content": a_candidate}],
-                                                  temperature=0.8,
-                                                  max_tokens=750,
+### CODE:
+{code}
+
+{feeds}
+### INSTRUCTIONS:
+- Analyze the feedback carefully to identify the issues in the code.
+- Fix all the errors and improve the code where necessary.
+- Ensure all test cases pass successfully.
+- Maintain the original logic and intent of the code as much as possible.
+Return only the corrected code"""
+    return final_prompt
+
+
+def mutate_prompt_gpt(a_candidate, gpt_client, model_name):
+    query2 = "You are a mutation tool. This is a python function and it's description. Please change the description by enhancing it's clarity and comprehension for sophisticated language models. Please put the changed description between #Explanation and #End. Use at most 1000 words."
+    prompt = a_candidate[0]
+    response = gpt_client.chat.completions.create(model=model_name,
+                                                  messages=[
+                                                      {"role": "user",
+                                                       "content": query2 + '\n\n' + prompt}],
+                                                  # temperature=0.8,
+                                                  # max_tokens=750,
                                                   )
-    return process_api_prompt(response.choices[0].message.content, a_candidate)
+    usage = response.usage
+    usage = {
+        'completion_tokens': usage.completion_tokens,
+        'prompt_tokens': usage.prompt_tokens,
+        'total_tokens': usage.total_tokens,
+    }
+    return process_api_prompt(response.choices[0].message.content, prompt), usage
+
+def mutate_prompt_gpt_v2(a_candidate, gpt_client, model_name):
+    prompt = a_candidate[0]
+    code = a_candidate[2]
+    feedback = a_candidate[3]
+    feeds = ''
+    for idx, ff in enumerate(feedback):
+        feeds += f"""
+    #### Test {idx}:
+    {ff[2]}
+    ### Feedback {idx}:
+    {ff[1]}
+            """
+    final_prompt = f"""
+We have generated code based on the given prompt. Now, using both the generated code and the execution feedback from the tests, refine the original prompt to incorporate the insights from the test results. Ensure that the revised prompt provides clearer guidance to the LLM, improving its ability to generate the correct code.
+Place the enhanced prompt (including function signature, input and output types) between three asterisks (***). Don't place anything else between three asterisks (***) just the enhanced prompt. Don't implement the code.
+
+    ### Prompt:
+    {prompt}
+    
+    ### CODE:
+    {code}
+
+    {feeds}"""
+    # print(final_prompt)
+    response = gpt_client.chat.completions.create(model=model_name,
+                                                  messages=[{"role": "user",
+                                                             "content": final_prompt}],
+                                                  # temperature=0.8,
+                                                  # max_tokens=750,
+                                                  )
+    response = response.choices[0].message.content
+    match = re.search(r'\*\*\*(.*?)\*\*\*', response, re.DOTALL)
+    return match.group(1).strip() if match else ""
+
 
 
 def mutate_prompts_api(a_candidate, mutation_llm):
@@ -182,7 +374,7 @@ def crossover_prompts_api(cands, mutation_llm):
 
 
 def validate_prompt(prompt):
-    if 'def' in prompt and len(list(prompt.split(' '))) < max_response_length:
+    if 'def' in prompt:
         return True
     return False
 
@@ -255,46 +447,69 @@ def evaluate_prompt(test_cases, prompt, codeLLama_tokenizer, codeLLama_model, ma
     return pass_at_k['pass@1']
 
 
-def get_gpt_code_completion(gpt_client, prompt):
+def get_gpt_code_completion(gpt_client, prompt, model_name):
     counter = 0
     number_of_tries = 5
+    usage = {
+        'completion_tokens': 0,
+        'prompt_tokens': 0,
+        'total_tokens': 0,
+    }
+    if 'o3-mini' not in model_name:
+        params = {
+            'temperature': 0,
+            'max_tokens': 1024,
+        }
+    else:
+        params = {
+            # 'max_completion_tokens': 2024,
+        }
     while True:
         try:
             if counter == number_of_tries:
                 print(f'code completion failed for prompt: {prompt}')
-                return prompt
-            response = gpt_client.chat.completions.create(model=openai_model,
+                return prompt, usage
+            response = gpt_client.chat.completions.create(model=model_name,
                                                           messages=[{"role": "system",
-                                                                     "content": "You are a python developer that implements the correct code based on the function description provided. You are given one or more functions to implement. Don't delete import statements in the code snippet. Use at most 1000 words."},
+                                                                     "content": "You are a python developer that implements the correct code based on the function description provided. You are given one or more functions to implement. Don't delete import statements in the code snippet. Use at most 2000 words. Import any necessary libraries used in the code."},
                                                                     {"role": "user",
-                                                                     "content": prompt.replace(
+                                                                     "content":  "You are a python developer that implements the correct code based on the function description provided. You are given one or more functions to implement. Don't delete import statements in the code snippet. Use at most 2000 words. Import any necessary libraries used in the code.\n\n" +prompt.replace(
                                                                          "#SPECIAL_TOKEN", "")}],
-                                                          temperature=0,
-                                                          max_tokens=1024,
-                                                          top_p=1,
-                                                          frequency_penalty=0.0,
-                                                          presence_penalty=0.0,
+                                                          **params
                                                           )
             filling = response.choices[0].message.content
+            usage = response.usage
+            usage = {
+                'completion_tokens': usage.completion_tokens,
+                'prompt_tokens': usage.prompt_tokens,
+                'total_tokens': usage.total_tokens,
+            }
             break
         except openai.InternalServerError:
             print('Internal Server Error OpenAI, waiting 10 seconds...')
             time.sleep(10)
             counter += 1
-    IMPORT_HEADER = "from typing import *\nimport math\nfrom heapq import *\nimport itertools\nimport re\nimport typing\nimport heapq\n_str=str\nimport re\n"
+    # print(filling)
+    # print('-'*100)
+
     ##process
     try:
         filling = IMPORT_HEADER + prompt + '\n' + filling.split('```')[1].replace('python', '')
     except IndexError:
-        filling = IMPORT_HEADER + prompt
+        filling = IMPORT_HEADER + filling
     ###
-    return filling
+    return filling, usage
 
-def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama_tokenizer, codeLLama_model, magic_coder, human_eval,
-                                         model_to_test=0, prompt_index=None, gpt_client=None):
-    if not validate_prompt(
-            prompt):
-        return 0, 0
+def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama_tokenizer, codeLLama_model, magic_coder, human_eval, model_name,
+                                         model_to_test=0, prompt_index=None, gpt_client=None, dataset_choice=1):
+    usage ={
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0
+  }
+    # if not validate_prompt(
+    #         prompt):
+    #     return 0, 0, usage
     if model_to_test == 0:
         prompt = codeLLama_tokenizer(prompt.replace('#SPECIAL_TOKEN', ''), return_tensors="pt")["input_ids"].to(
             'cuda:0')
@@ -306,26 +521,48 @@ def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama
             filling = aas[0] + 'def' + aas[1]
         except Exception as e:
             # print(prompt)
-            return 0, 0
+            return 0, 0, usage
     elif model_to_test == 1:
         filling = \
         magic_coder(prompt.replace('#SPECIAL_TOKEN', ''), max_length=512, num_return_sequences=1, do_sample=False)[0][
             'generated_text']
         filling = process_a_code_magic_coder(filling, prompt_index,human_eval)
     elif model_to_test == 2:
-            filling = get_gpt_code_completion(gpt_client, prompt)
+            filling, usage = get_gpt_code_completion(gpt_client, prompt, model_name)
+    elif model_to_test == 3:
+        filling, usage = generate_code_llamaapi(model_name=model_name, prompt=prompt)
+        time.sleep(1)
+    elif model_to_test == 4:
+        filling, usage = generate_code_sonnet(model_name=model_name, prompt=prompt)
+        time.sleep(1)
+    elif model_to_test == 5:
+        filling, usage = generate_code_fireworks(model_name=model_name, prompt=prompt)
     ##
     candidate = [filling]
     candidates = [candidate]
 
     pass_total = 0
-    for a_test in generated_test_cases:
-        pass_at_k, results = code_eval_metric.compute(references=[a_test], predictions=candidates, k=[1])
-        pass_total += pass_at_k['pass@1']
-    try:
-        return pass_total / len(generated_test_cases), filling
-    except ZeroDivisionError:
-        return 1, filling
+    if dataset_choice == 3:
+        # print('running unittest evaluation')
+        res = run_unit_tests_parallel(code_str=filling, test_list=generated_test_cases)
+        # for a in res:
+        #     print(a[1])
+        try:
+            passat1 = len([an for an in res if an[0]==True]) / len(res)
+            return passat1, filling, usage
+        except ZeroDivisionError:
+            return 1, filling, usage
+    else:
+        for a_test in generated_test_cases:
+            # print(a_test)
+            # print(filling)
+            # print('here2')
+            pass_at_k, results = code_eval_metric.compute(references=[a_test], predictions=candidates, k=[1])
+            pass_total += pass_at_k['pass@1']
+        try:
+            return pass_total / len(generated_test_cases), filling, usage
+        except ZeroDivisionError:
+            return 1, filling, usage
 
     # with Pool() as p:
     #     results = p.starmap(f, zip(test_cases, repeat(candidates)))
@@ -334,7 +571,8 @@ def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama
 
 
 def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
-                         human_eval, iteration, magic_coder, model_to_test, number_of_tests, passed_codes, time_test, gpt_client=None):
+                         human_eval, iteration, magic_coder, model_to_test, number_of_tests, passed_codes, time_test,model_name,dataset_choice, gpt_client=None):
+
     e = time.time()
     if iteration != 1000:
         if model_to_test == 0:
@@ -377,19 +615,66 @@ def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, e
             fillings = []
             for index, a_token in tqdm(enumerate(chosen_prompts)):
                 if not validate_prompt(
-                        a_token):  ##this is because codeLLama_model has no max_new_tokens set and generates infinite output
+                        a_token):
                     filling = 'teeeeeeeeeeeeeeeeest'
                     fillings.append([filling])
                     continue
                 if not passed_codes[index]:
-                    filling = get_gpt_code_completion(gpt_client, a_token)
+                    filling, _ = get_gpt_code_completion(gpt_client, a_token, model_name)
                     fillings.append(filling)
                 else:
                     fillings.append(passed_codes[index])
             fillings = [[fil] for fil in fillings]
+        elif model_to_test == 3:
+            fillings = []
+            for index, a_token in tqdm(enumerate(chosen_prompts)):
+                if not validate_prompt(
+                        a_token):
+                    filling = 'teeeeeeeeeeeeeeeeest'
+                    fillings.append([filling])
+                    continue
+                if not passed_codes[index]:
+                    filling, _ = generate_code_llamaapi(model_name=model_name, prompt=a_token)
+                    fillings.append(filling)
+                else:
+                    fillings.append(passed_codes[index])
+            fillings = [[fil] for fil in fillings]
+        elif model_to_test in (4,5):
+            fillings = []
+            for index, a_token in tqdm(enumerate(chosen_prompts)):
+                if not validate_prompt(
+                        a_token):
+                    filling = 'teeeeeeeeeeeeeeeeest'
+                    fillings.append([filling])
+                    continue
+                if not passed_codes[index]:
+                    if model_to_test == 4:
+                        filling, _ = generate_code_sonnet(model_name=model_name, prompt=a_token)
+                    else:
+                        filling, _ = generate_code_fireworks(model_name=model_name, prompt=a_token)
+                    fillings.append(filling)
+                else:
+                    fillings.append(passed_codes[index])
+            fillings = [[fil] for fil in fillings]
+        if dataset_choice == 3:
+            print('please perform final evaluation on bigcodebench github...')
+            return fillings, []
         errorrrs = []
-        pass_at_k, results = code_eval_metric.compute(references=final_test_cases[0:number_of_tests],
-                                                      predictions=fillings, k=[1])  ##here
+        # print(fillings[2])
+        # print(final_test_cases[2])
+        # num_passed = 0
+        # for idx_1,fil in enumerate(fillings):
+        #     print(fil[0])
+        #     for aaa in final_test_cases[idx_1]:
+        #         print(aaa)
+        #     print('*'*100)
+        #     res = run_test_cases(fil[0],final_test_cases[idx_1],timeout=120)
+        #     all_passed = all(res)
+        #     num_passed += 1 if all_passed else 0
+        # pass_at_k = num_passed / len(fillings)
+        # pass_at_k, results = code_eval_metric.compute(references=final_test_cases[0:number_of_tests],
+        #                                               predictions=fillings, k=[1])  ##here
+        pass_at_k, results = CodeEval()._compute(references=final_test_cases[0:number_of_tests], predictions=fillings, k=[1])
         # for key, value in results.items():
         #     if value[0][1]['passed']:
         #         passed_codes[value[0][1]['task_id']] = fillings[value[0][1]['task_id']][0]
@@ -414,7 +699,7 @@ def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, e
 
 
 def print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation, time_next_make_generation,
-                        time_test, time_total_per_instance):
+                        time_test, time_total_per_instance, usage):
     print('number_of_supposed_passed_codes')
     print(number_of_supposed_passed_codes)
     print('time_total_per_instance')
@@ -429,8 +714,8 @@ def print_time_measures(evaluations, number_of_supposed_passed_codes, start, tim
     time_total = time.time() - start
     print(time_total)
     print(evaluations)
-    print('time_total_per_instance for every loop:')
-    print(np.sum(time_total_per_instance, axis=1) + time_test)
+    # print('time_total_per_instance for every loop:')
+    # print(np.sum(time_total_per_instance, axis=1) + time_test)
     print('total time:')
     print(time_total)
     print('Total time - final evaluations in loop')
@@ -444,6 +729,7 @@ def print_time_measures(evaluations, number_of_supposed_passed_codes, start, tim
     print('evaluation(code generation and running test cases)')
     print(np.sum(time_evaluation))
     print(np.sum(time_evaluation, axis=1))
+    print(f'total usage: {usage}')
 
 
 def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, human_eval, number_of_tests=164, model_to_test=0, mutation_llm=1):
@@ -554,12 +840,8 @@ def run_genetic_algorithm(base_prompts_re, codeLLama_tokenizer, codeLLama_model,
                         time_test, time_total_per_instance)
 
 
-def stop_criteria_met(number_of_supposed_passed_codes, dataset_length):
-    if len(number_of_supposed_passed_codes) < 2:
-        return False
-    elif len(number_of_supposed_passed_codes) >= 4:
-        return True
-    elif (number_of_supposed_passed_codes[-1] - number_of_supposed_passed_codes[-2])/dataset_length <= 0.015:
+def stop_criteria_met(number_of_supposed_passed_codes, dataset_length, iteration):
+    if iteration >= 3:
         return True
     else:
         return False
@@ -697,26 +979,29 @@ def select_final_prompts(base_prompts_re, dataset):
     return chosen_prompts
 
 
-def save_results(dataset_choice, dataset, final_code, errors_index, chosen_prompts, final_test_cases, seed):
-    if dataset_choice == 1:
-        file_dir = 'output/humaneval_results.jsonl'
-    elif dataset_choice == 2:
-        file_dir = f'output/mbpp_results_{seed}.jsonl'
-    else:
-        return
-    out_dict = {}
+def save_results(dataset_choice, dataset, final_code, errors_index, chosen_prompts, final_test_cases, seed, model_to_test, experiment_to_run):
+    file_dir = f'output/{experiment_to_run}.jsonl'
+    out_dict = []
+    bigloader = BigCodeLoader(hard=1)
+    bigcode_dis = bigloader.get_ids()
     for index, item in enumerate(dataset):
-        out_dict[index] = {
+        out_dict.append({
             'prompt': item,
-            'implementation': final_code[index],
+            'solution': final_code[index][0],
             'test_cases': final_test_cases[index],
+            'name': index,
+            'task_id': index,
             'is_passed': 'False' if index in errors_index else 'True'
-        }
-    with open(file_dir, 'w') as outfile:
-        json.dump(out_dict, outfile, indent=4)
+        })
+        if dataset_choice == 3:
+            out_dict[-1]['name'] = bigcode_dis[index]
+            out_dict[-1]['task_id'] = bigcode_dis[index]
+    with open(file_dir, "w") as file:
+        for item in out_dict:
+            file.write(json.dumps(item) + "\n")
 
 
-def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, dataset, number_of_tests=164, model_to_test=0, gpt_client=None, population_size=5, dataset_choice=1, seed=137, mutation_tool=1):
+def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_coder, final_test_cases, generated_testcases, dataset,experiment_to_run, number_of_tests=164, model_to_test=0, gpt_client=None, population_size=5, dataset_choice=1, seed=137, mutation_tool=1, model_name='o3-mini-2025-01-31'):
 
     random.seed(seed)
     all_generated_promts = []
@@ -742,18 +1027,23 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
 
     ## pre evaluation
     base_prompts_re = []
-    print('running iteration 0... generating first population')
     from results.gpt_humaneval_code_completion import gpt_generated_codes
     time_total_per_instance.append([])
     time_evaluation.append([])
     time_next_make_generation.append([])
-    pass_threshold = 0.6
+    pass_threshold = 1
+    total_usage = {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0
+    }
     all_codes = [[]]
     for i in range(len(dataset)):
         all_codes[iteration].append([])
     for idx, prompt in enumerate(dataset):
         time_one = time.time()
-        passat1, filling = evaluate_prompt_on_generated_prompts(
+        # print(f'here1 {idx}')
+        passat1, filling, usage = evaluate_prompt_on_generated_prompts(
             generated_test_cases=generated_testcases[idx],
             prompt=prompt, model_to_test=model_to_test,
             prompt_index=idx,
@@ -761,12 +1051,20 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             codeLLama_model=codeLLama_model,
             magic_coder=magic_coder,
             human_eval=dataset,
-            gpt_client=gpt_client)
+            gpt_client=gpt_client,
+            model_name=model_name,
+            dataset_choice=dataset_choice
+        )
+
+        total_usage['prompt_tokens'] += usage['prompt_tokens']
+        total_usage['completion_tokens'] += usage['completion_tokens']
+        total_usage['total_tokens'] += usage['total_tokens']
         time_evaluation[iteration].append(round(time.time() - time_one))
-        print(idx)
-        print(passat1)
+        # print(idx)
+        # print(passat1)
+        # print(filling)
         all_codes[iteration][idx].append((prompt, filling, passat1))
-        if passat1 >= 0.8:
+        if passat1 >= 1:
             base_prompts_re.append([prompt])
             passed_codes[idx] = filling
             print(
@@ -774,7 +1072,11 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
             time_next_make_generation[iteration].append(0)
         else:
             time_a = time.time()
-            first_generation = generate_first_population_for_instance(prompt=prompt,population_size=population_size,client=gpt_client, human_eval=dataset,use_stored_prompts=False, idx=idx, dataset_choice=dataset_choice, generated_testcases=generated_testcases[idx])
+            first_generation, usage2 = generate_first_population_for_instance(prompt=prompt,population_size=population_size,client=gpt_client, human_eval=dataset,use_stored_prompts=False, idx=idx, dataset_choice=dataset_choice, generated_testcases=generated_testcases[idx], model_name=model_name, model_to_test=model_to_test)
+
+            total_usage['prompt_tokens'] += usage2['prompt_tokens']
+            total_usage['completion_tokens'] += usage2['completion_tokens']
+            total_usage['total_tokens'] += usage2['total_tokens']
             base_prompts_re.append(first_generation)
             time_next_make_generation[iteration].append(time.time() - time_a)
         time_two = time.time()
@@ -784,11 +1086,11 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
     if run_evaluation_each_generation:
         run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
                              dataset, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
-                             time_test, gpt_client)
+                             time_test, model_name,dataset_choice, gpt_client)
     print('initial evaluation and making first generation time in seconds: ', round(time.time() - start))
     # pre evaluation
     iteration += 1
-    while(not stop_criteria_met(number_of_supposed_passed_codes, len(dataset))):
+    while not stop_criteria_met(number_of_supposed_passed_codes, len(dataset), iteration):
         all_codes.append([])
         for i in range(len(dataset)):
             all_codes[iteration].append([])
@@ -815,7 +1117,7 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
                 a = time.time()
                 for single_prompt in a_prompt_set:
                     passed = False
-                    passat1, filling = evaluate_prompt_on_generated_prompts(
+                    passat1, filling, usage = evaluate_prompt_on_generated_prompts(
                         generated_test_cases=generated_testcases[idx],
                         prompt=single_prompt, model_to_test=model_to_test,
                         prompt_index=idx,
@@ -823,7 +1125,12 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
                         codeLLama_model=codeLLama_model,
                         magic_coder=magic_coder,
                         human_eval=dataset,
-                        gpt_client=gpt_client)
+                        gpt_client=gpt_client,
+                        model_name=model_name,
+                        dataset_choice=dataset_choice)
+                    total_usage['prompt_tokens'] += usage['prompt_tokens']
+                    total_usage['completion_tokens'] += usage['completion_tokens']
+                    total_usage['total_tokens'] += usage['total_tokens']
                     all_codes[iteration][idx].append((single_prompt, filling, passat1))
                     candidates.append([single_prompt, passat1, filling])
                     if passat1 == 1:
@@ -867,16 +1174,27 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
                 elif population_size == 3:
                     number_of_generations_by_mutations = 2
                     straight_of_generations_by_mutations = 1
+                elif population_size == 8:
+                    number_of_generations_by_mutations = 7
+                    straight_of_generations_by_mutations = 1
                 ## straight select
-                next_generation_prompts.extend(choose_candidates(candidates, straight_of_generations_by_mutations))
+                # print(candidates)
+                # print('*'*100)
+                aaa = choose_candidates(candidates, straight_of_generations_by_mutations)
+                next_generation_prompts.extend([a[0] for a in aaa])
 
                 ## mutation
                 selected_candidates_for_mutations = choose_candidates(candidates, number_of_generations_by_mutations)
                 for a_candidate in selected_candidates_for_mutations:
                     if mutation_tool == 1:
                         final_sentence = mutate_prompt(a_candidate)
+                        # final_sentence = augment_promt(a_candidate)
                     else:
-                        final_sentence = mutate_prompt_gpt(a_candidate, gpt_client)
+                        final_sentence, usage = mutate_prompt_gpt(a_candidate, gpt_client, model_name)
+                        total_usage['prompt_tokens'] += usage['prompt_tokens']
+                        total_usage['completion_tokens'] += usage['completion_tokens']
+                        total_usage['total_tokens'] += usage['total_tokens']
+                        # final_sentence = mutate_prompt_gpt_v2(a_candidate, gpt_client, model_name)
                     next_generation_prompts.append(final_sentence)
                 base_prompts_re[idx] = next_generation_prompts
 
@@ -889,12 +1207,12 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
         if run_evaluation_each_generation:
             final_code, errors_index = run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
                                  dataset, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
-                                 time_test, gpt_client)
+                                 time_test,model_name,dataset_choice, gpt_client)
         iteration += 1
     if not run_evaluation_each_generation:
         final_code, errors_index = run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
                              dataset, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
-                             time_test, gpt_client)
+                             time_test, model_name,dataset_choice,gpt_client)
     # print(passed_codes)
     # print('Final prompts:-----------------------------------')
     # print(chosen_prompts)
@@ -903,9 +1221,9 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
     # print('All prompts:---------------------------------------')
     # print(all_codes)
     print_time_measures(evaluations, number_of_supposed_passed_codes, start, time_evaluation, time_next_make_generation,
-                        time_test, time_total_per_instance)
-    save_results(dataset_choice, dataset, final_code, errors_index, chosen_prompts, final_test_cases, seed)
-    return evaluations[-1][0]['pass@1']
+                        time_test, time_total_per_instance, total_usage)
+    save_results(dataset_choice, dataset, final_code, errors_index, chosen_prompts, final_test_cases, seed, model_to_test, experiment_to_run)
+    # return evaluations[-1][0]['pass@1']
     # print('successful prompts **********************************************************')
     # print(base_prompts_re)
     # print('successful codes ****************************************************************')

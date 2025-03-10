@@ -2,7 +2,7 @@ from .py_generate import PyGenerator
 from .rs_generate import RsGenerator
 from .go_generate import GoGenerator
 from .generator_types import Generator
-from .model import CodeLlama, ModelBase, GPT4, GPT35, StarChat, GPTDavinci, GPT4turbo, GPT4o
+from .model import CodeLlama, ModelBase, GPT4, GPT35, StarChat, GPTDavinci, GPT4turbo, GPT4o, O3mini, FireworksAPIRequester, AntropicRequester
 
 
 def generator_factory(lang: str) -> Generator:
@@ -19,6 +19,12 @@ def generator_factory(lang: str) -> Generator:
 def model_factory(model_name: str) -> ModelBase:
     if model_name == "gpt4o":
         return GPT4o()
+    elif model_name == "o3-mini":
+        return O3mini()
+    elif model_name == "deepseek-v3":
+        return FireworksAPIRequester('deepseek-v3')
+    elif model_name == "claude-3.7-sonnet":
+        return AntropicRequester('claude-3-7-sonnet-20250219')
     if model_name == "gpt-4-0125-preview":
         return GPT4turbo()
     if model_name == "gpt-4":

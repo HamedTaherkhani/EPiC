@@ -202,9 +202,10 @@ def generic_generate_internal_tests(
                     content=f"{test_generation_few_shot}\n\n[func signature]:\n{func_sig}\n\n[think]:"
                 )
             ]
-            output = model.generate_chat(messages=messages, max_tokens=1024)
+            output = model.generate_chat(messages=messages)
             print(f'React test generation output: {output}')
         else:
+            import re
             messages = [
                 Message(
                     role="system",
@@ -212,13 +213,29 @@ def generic_generate_internal_tests(
                 ),
                 Message(
                     role="user",
-                    content=f"[func signature]:\n{func_sig}\n\n[unit tests]:",
+                    content=test_generation_chat_instruction + '\n\n' + f"[func signature]:\n{func_sig}\n\n[unit tests]:",
                 )
             ]
-            output = model.generate_chat(messages=messages, max_tokens=1024)
+            output = model.generate_chat(messages=messages)
+            print(output)
+            pattern = r'\*\*\*\*(.*?)\*\*\*\*'
+            match = re.search(pattern, output)
+            if match:
+                output = match.group(1)
+            else:
+                pass
+
     else:
+        import re
         prompt = f'{test_generation_completion_instruction}\n\nfunc signature:\n{func_sig}\nunit tests:'
-        output = model.generate(prompt, max_tokens=1024)
+        output = model.generate(prompt)
+        pattern = r'\*\*\*\*(.*?)\*\*\*\*'
+        match = re.search(pattern, output)
+        if match:
+            output = match.group(1)
+        else:
+            pass
+
     all_tests = parse_tests(output)  # type: ignore
     valid_tests = [test for test in all_tests if is_syntax_valid(test)]
 
