@@ -1,76 +1,173 @@
-# EPiC: Cost-effective Search-based Prompt Engineering of LLMs for Code Generation
+# EPiC: Evolutionary Prompt Engineering for Code
 
-## Introduction
-This project presents EPiC, a cost-effective approach leveraging a lightweight evolutionary algorithm to evolve prompts for better code generation using Large Language Models (LLMs). The framework outperforms state-of-the-art methods in terms of cost-effectiveness and accuracy.
+Welcome to EPiC, a framework designed to **cost-effectively** generate high-quality code by iteratively improving prompts through a **lightweight evolutionary algorithm**. EPiC (Evolutionary **P**rompt **En**gineering for **C**ode) refines an original prompt to produce increasingly better code solutions, all while minimizing the number of calls (and hence cost) to large language models (LLMs). 
 
-## Project Structure
-The main files in this project are:
+This repository contains:
 
-- `run_experiments.py`: Main script to execute various experiments.
-- `testcase_generator.py`: Generates test cases for MBPP and HumanEval datasets.
+1. **`run_experiments.py`**  
+   Main script to run various experiment configurations with different LLMs and evolutionary settings.
+
+2. **`testcase_generator` directory** (and associated scripts like `testcase_generator.py`)  
+   Scripts to generate test cases (HumanEval, MBPP, BigCodeBench, etc.) using different models and approaches.
+
+3. **`requirements.txt`**  
+   Python dependencies needed to reproduce the experiments.
+
+---
+
+## Project Overview
+
+**EPiC** is an approach that uses an evolutionary algorithm to **refine prompts** for code generation tasks. While many agent-based or iterative code-generation methods make extensive LLM calls (thus driving up costs), EPiC aims to achieve:
+
+- **High-quality code** (measured via pass rates on test suites).
+- **Cost-effectiveness** (minimizing token usage and total calls to LLMs).
+
+### Key Highlights
+- **Lightweight Evolutionary Algorithm**: EPiC starts with an initial prompt, evaluates the generated code, and if incorrect, mutates the prompt in a minimal-cost manner until a valid solution is found.
+- **Flexible**: Can be adapted to multiple LLMs (e.g., GPT-4, MagicCoder, Claude 3.7, DeepSeek, etc.) and various code datasets (HumanEval+, MBPP+, BigCodeBench, etc.).
+- **Local or LLM-based Mutation**: Supports two types of mutation operators:
+  1. **`sim_words_as_mutator`** using local word embeddings (NLTK + Gensim) to cheaply vary prompt text.
+  2. **`llm_as_mutator`** using the LLM to mutate the prompt for more sophisticated changes (at higher cost).
+
+---
 
 ## Installation
-To set up the environment and install dependencies, run:
 
-```bash
-pip install -r requirements.txt
-```
+1. **Clone** this repository:
+   ```bash
+   git clone https://github.com/YourUserName/EPiC.git
+   cd EPiC
+   ```
+2. **Install** dependencies (preferably within a virtual environment):
+   ```bash
+   pip install -r requirements.txt
+   ```
+   This installs all the libraries needed for code generation, prompt engineering, and test-case generation.
+---
 
-## Running Experiments
-Experiments can be run using the `run_experiments.py` script. This script uses several modules and configurations to perform different experiments. The environment variables and configurations must be set in a `.env` file.
+## Usage
 
 ### Environment Variables
-Create a `.env` file in the root directory of the project and set the following variables:
 
-```env
-experiment=<experiment_id>
-openai_key=<openai_key>
-openai_model=<openai_model>
+EPiC uses environment variables for flexible configuration. You can create a `.env` file or set these environment variables manually.
+
+At minimum, you will need:
+
+- `experiment`: An integer ID specifying which experiment to run. See the mapping in `run_experiments.py` (`experiments` dict).
+- `human_eval_instances`: A JSON list of selected instance IDs (used in some experiments).
+
+For example, your `.env` might look like:
 ```
-
-### Available Experiments
-The available experiments are defined in the `run_experiments.py` script. Here are the available experiment IDs and their corresponding descriptions:
-
-1. `genetic-magiccoder-llama2-70b`
-2. `genetic-codellama-llama2-70b`
-3. `genetic-magiccoder-gensim`
-4. `genetic-codellama-gensim`
-5. `genetic-magicoder-llama2-7b`
-6. `genetic-gpt4-gensim`
-7. `genetic-gpt4-gensim-ten_population`
-8. `genetic-gpt4-gensim-10-times`
-9. `genetic-gpt4-gensim-mbpp`
-10. `genetic-gpt4-gpt4`
-11. `genetic-gpt4-gensim-mbpp-10-times`
-
-### Running a Specific Experiment
-To run a specific experiment, set the `experiment` variable in the `.env` file to the desired experiment ID. Then run:
-
-```bash
-python run_experiments.py
-```
-
-### Example `.env` File
-```env
 experiment=9
-openai_model=gpt-4o
-openai_key=your_key
+human_eval_instances=[1,2,3,...]
+TRANSFORMERS_CACHE=/path/to/huggingface_cache  # optional cache path
+OPENAI_API_KEY=your_openai_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
 
-## Generating Test Cases
-To generate test cases, use the `testcase_generator.py` script. This script can generate test cases for both the MBPP and HumanEval datasets.
+### Running Experiments with `run_experiments.py`
 
-## Citation
-If you use this code, please cite our paper:
+The script **`run_experiments.py`** is the central entry point. It orchestrates multiple types of experiments, each identified by an integer ID in the `experiments` dictionary:
 
-```bibtex
-@misc{taherkhani2024epiccosteffectivesearchbasedprompt,
-      title={EPiC: Cost-effective Search-based Prompt Engineering of LLMs for Code Generation}, 
-      author={Hamed Taherkhani and Melika Sepindband and Hung Viet Pham and Song Wang and Hadi Hemmati},
-      year={2024},
-      eprint={2408.11198},
-      archivePrefix={arXiv},
-      primaryClass={cs.SE},
-      url={https://arxiv.org/abs/2408.11198}, 
+```python
+experiments = {
+    1: 'genetic-magiccoder-llama2-70b',
+    2: 'genetic-codellama-llama2-70b',
+    3: 'genetic-magiccoder-gensim',
+    ...
+    22: 'genetic-sonnet3.7-mbpp',
 }
 ```
+
+**Steps to run**:
+
+1. Set `experiment` in your `.env` or environment.
+2. Set `human_eval_instances` (the problem IDs you want to run).
+3. Run:
+   ```bash
+   python run_experiments.py
+   ```
+4. The script automatically chooses the appropriate `Runner` or `Experiments` class to execute the genetic (evolutionary) prompt engineering procedure.
+
+---
+
+### Generating Test Cases
+
+We employ LLMs to generate test cases for benchmarks (like HumanEval or MBPP) in a fully automated manner:
+
+- **`testcase_generator.py`** (entry script)  
+  - **`generate_for_humaneval(model_name)`**: Generates test cases for the HumanEval dataset.  
+  - **`generate_for_mbpp(model_name)`**: Generates test cases for the MBPP dataset.  
+
+**Usage**:
+1. Update `model_name` in `testcase_generator.py`.
+2. Run:
+   ```bash
+   python testcase_generator.py
+   ```
+3. The generated test cases are stored in `testcases/`.
+
+---
+
+## Directory Structure
+
+A brief overview of key files/folders:
+
+```
+EPiC/
+  ├─ run_experiments.py       # Main script for running genetic prompt engineering experiments
+  ├─ testcase_generator.py     # Test-case generation script
+  ├─ BigCodeLoader.py          # Utility to handle BigCodeBench dataset
+  ├─ MBPPLoader.py             # Utility to handle MBPP dataset
+  ├─ humaneval_loader.py       # Utility to load HumanEval dataset
+  ├─ ...
+  ├─ TestcaseGenerator/        # Directory containing various test generation utilities
+  │   ├─ generators/           # Different generator factories
+  │   └─ ...
+  ├─ .env.example             # Example environment file
+  ├─ requirements.txt          # All Python dependencies
+  └─ paper/ or paper text      # The draft paper describing EPiC
+```
+
+---
+
+## Key Components
+
+### 1. The EPiC Algorithm
+
+In **`run_experiments.py`**, each experiment uses **EPiC**:
+
+1. **Initial Evaluation (IE)**:
+   - Prompt the LLM to generate code and test cases.
+   - Evaluate the code with the newly generated tests.  
+   - If the code fails tests, proceed to evolutionary prompt engineering.
+
+2. **Evolutionary Prompt Engineering (EPE)**:
+   - Create a **population** of mutated prompts (the first generation).
+   - For each prompt:
+     - Ask the LLM for code.
+     - Evaluate against tests → get a **fitness** score.
+   - **Select** top prompts based on fitness and **mutate** them to form the next generation.
+   - Repeat until a correct (fully passing) solution emerges or iteration-limit reached.
+
+### 2. Mutation Approaches
+
+Two main mutation modes:
+
+1. **`llm_as_mutator`**  
+   - Uses an LLM to rewrite the prompt.  
+   - Potentially more powerful but higher API cost.
+
+2. **`sim_words_as_mutator`**  
+   - Uses NLP libraries (NLTK + Gensim) to find synonyms or similar words.  
+   - Low cost but still effective at nudging the LLM to generate alternative code.
+
+### 3. Datasets & Benchmarks
+
+We focus on three main benchmarks:
+
+1. **HumanEval+**: Extended HumanEval with more thorough test cases.  
+2. **MBPP+**: Extended MBPP with additional tests and broader coverage.  
+3. **BigCodeBench**: Large dataset spanning more complex function calls and instructions.
+
+Each dataset is loaded through a corresponding loader (e.g., `HumanEvalLoader`, `MBPPLoader`, `BigCodeLoader`).
