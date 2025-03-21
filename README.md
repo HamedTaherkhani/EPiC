@@ -1,4 +1,4 @@
-# EPiC: Evolutionary Prompt Engineering for Code
+# Evolutionary Prompt Engineering for Cost-Effective Code Generation with Large Language Models
 
 Welcome to EPiC, a framework designed to **cost-effectively** generate high-quality code by iteratively improving prompts through a **lightweight evolutionary algorithm**. EPiC (Evolutionary **P**rompt **En**gineering for **C**ode) refines an original prompt to produce increasingly better code solutions, all while minimizing the number of calls (and hence cost) to large language models (LLMs). 
 
@@ -47,22 +47,21 @@ This repository contains:
 
 ## Usage
 
+
+### Setup
+- get openAI key from https://platform.openai.com/api-keys (for o3-mini)
+- get Firework key from https://fireworks.ai/account/api-keys (for deepseek-v3)
+- get Antropic key from https://console.anthropic.com/settings/keys (for claude 3.7 Sonnet)
 ### Environment Variables
-
 EPiC uses environment variables for flexible configuration. You can create a `.env` file or set these environment variables manually.
-
-At minimum, you will need:
-
-- `experiment`: An integer ID specifying which experiment to run. See the mapping in `run_experiments.py` (`experiments` dict).
-- `human_eval_instances`: A JSON list of selected instance IDs (used in some experiments).
 
 For example, your `.env` might look like:
 ```
-experiment=9
-human_eval_instances=[1,2,3,...]
-TRANSFORMERS_CACHE=/path/to/huggingface_cache  # optional cache path
-OPENAI_API_KEY=your_openai_api_key
-ANTHROPIC_API_KEY=your_anthropic_api_key
+experiment=6
+human_eval_instances=[] ## A list of selected instance IDs (used in some experiments). Leave it empty as default.
+openai_key=your_openai_api_key
+anthropic_key=your_anthropic_api_key
+fireworks_key=your_fireworks_api_key
 ```
 
 ### Running Experiments with `run_experiments.py`
@@ -82,12 +81,11 @@ experiments = {
 **Steps to run**:
 
 1. Set `experiment` in your `.env` or environment.
-2. Set `human_eval_instances` (the problem IDs you want to run).
-3. Run:
+2. Run:
    ```bash
    python run_experiments.py
    ```
-4. The script automatically chooses the appropriate `Runner` or `Experiments` class to execute the genetic (evolutionary) prompt engineering procedure.
+3. The script automatically chooses the appropriate `Runner` or `Experiments` class to execute the genetic (evolutionary) prompt engineering procedure.
 
 ---
 
