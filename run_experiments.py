@@ -1,6 +1,5 @@
 import os
 import json
-# os.environ['TRANSFORMERS_CACHE'] = '/home/hamedth/projects/def-hemmati-ac/hamedth/hugging_face'
 from magiccoder_experiments import MagicCoderRunner
 from gpt_experiments import GPTRunner
 from llama_experiments import LlamaExperiments
