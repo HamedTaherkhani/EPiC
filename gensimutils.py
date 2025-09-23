@@ -10,6 +10,7 @@ lemmatizer = WordNetLemmatizer()
 from gensim.models import Word2Vec
 import gensim.downloader
 glove_vectors = gensim.downloader.load('fasttext-wiki-news-subwords-300')
+nltk.download('averaged_perceptron_tagger_eng')
 nltk.download('averaged_perceptron_tagger')
 nltk.download('wordnet')
 nltk.download('stopwords')

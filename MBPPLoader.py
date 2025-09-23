@@ -21,10 +21,17 @@ class MBPPLoader:
             entry += ":\n  \"\"\"" + a['prompt'] + "\"\"\""
             self.prompts_.append(entry)
 
-    def get_generated_testcases_o3mini(self):
+    def get_generated_testcases_o3mini(self, run=1):
         import os
-        script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-        rel_path = "testcases/mbpp_generated_testcases_o3-mini"
+        script_dir = os.path.dirname(__file__)
+        if run == 1:
+            rel_path = "testcases/mbpp_generated_testcases_o3-mini"
+        elif run == 2:
+            rel_path = 'testcases/tests_run2/mbpp_generated_testcases_o3-mini'
+        elif run == 3:
+            rel_path = 'testcases/tests_run3/mbpp_generated_testcases_o3-mini'
+        else:
+            raise Exception('Invalid run')
         abs_file_path = os.path.join(script_dir, rel_path)
         with open(abs_file_path, 'rb') as fp:
             item_list = pickle.load(fp)
@@ -39,10 +46,17 @@ class MBPPLoader:
         return list(item_list)
 
 
-    def get_generated_testcases_claude(self):
+    def get_generated_testcases_claude(self, run=1):
         import os
-        script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-        rel_path = "testcases/mbpp_generated_testcases_claude-3.7-sonnet"
+        script_dir = os.path.dirname(__file__)
+        if run == 1:
+            rel_path = "testcases/mbpp_generated_testcases_claude-3.7-sonnet"
+        elif run == 2:
+            rel_path = "testcases/tests_run2/mbpp_generated_testcases_claude-3.7-sonnet"
+        elif run == 3:
+            rel_path = "testcases/tests_run3/mbpp_generated_testcases_claude-3.7-sonnet"
+        else:
+            raise Exception('Invalid run')
         abs_file_path = os.path.join(script_dir, rel_path)
         with open(abs_file_path, 'rb') as fp:
             item_list = pickle.load(fp)
@@ -56,10 +70,17 @@ class MBPPLoader:
         item_list = map(filter_list, item_list)
         return list(item_list)
 
-    def get_generated_testcases_deepseek(self):
+    def get_generated_testcases_deepseek(self, run=1):
         import os
-        script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-        rel_path = "testcases/mbpp_generated_testcases_deepseek-v3"
+        script_dir = os.path.dirname(__file__)
+        if run == 1:
+            rel_path = "testcases/mbpp_generated_testcases_deepseek-v3"
+        elif run == 2:
+            rel_path = "testcases/tests_run2/mbpp_generated_testcases_deepseek-v3"
+        elif run == 3:
+            rel_path = "testcases/tests_run3/mbpp_generated_testcases_deepseek-v3"
+        else:
+            raise Exception('Invalid run')
         abs_file_path = os.path.join(script_dir, rel_path)
         with open(abs_file_path, 'rb') as fp:
             item_list = pickle.load(fp)

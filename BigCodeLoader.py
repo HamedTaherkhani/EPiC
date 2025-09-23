@@ -15,7 +15,7 @@ def find_import_statements(python_code: str) -> list:
     from_imports = re.findall(from_import_pattern, python_code, re.MULTILINE)
 
     # Combine both types of imports into a single list
-    return imports + from_imports + ['import matplotlib as plt']
+    return imports + from_imports + ['import matplotlib as plt', 'import numpy as np', 'import pandas as pd']
 
 def extract_function_signature(code_string):
     # Regular expression to capture the function signature
@@ -82,10 +82,11 @@ class BigCodeLoader:
             if len(imports) == 0:
                 print(item['complete_prompt'])
             # self.solutions.append('\n'.join(imports) + '\n' + extract_function_signature(item['complete_prompt'])+ ":\n" + item['canonical_solution'])
+            imports_text = '\n'.join(imports) + '\n'
             try:
-                sol = item['instruct_prompt'].split('```')[1] + item['canonical_solution']
+                sol = imports_text + item['instruct_prompt'].split('```')[1] + item['canonical_solution']
             except Exception as e:
-                sol = item['instruct_prompt'] + item['canonical_solution']
+                sol = imports_text+ item['instruct_prompt'] + item['canonical_solution']
             self.solutions.append(sol)
     def get_prompts(self):
         return self.prompts

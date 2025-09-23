@@ -50,8 +50,16 @@ class HumanEvalLoader:
             items = [item[:4] for index, item in enumerate(itemlist)]
         return items
 
-    def get_generated_test_cases_o3mini(self):
-        with open('testcases/humaneval_generated_testcases_o3-mini', 'rb') as fp:
+    def get_generated_test_cases_o3mini(self, run=1):
+        if run == 1:
+            test_path =  'testcases/humaneval_generated_testcases_o3-mini'
+        elif run == 2:
+            test_path = 'testcases/tests_run2/humaneval_generated_testcases_o3-mini'
+        elif run == 3:
+            test_path = 'testcases/tests_run3/humaneval_generated_testcases_o3-mini'
+        else:
+            raise ValueError('Invalid run')
+        with open(test_path, 'rb') as fp:
             itemlist = pickle.load(fp)
         if self.instances:
             items = [item for index, item in enumerate(itemlist) if index in self.instances]
@@ -59,8 +67,16 @@ class HumanEvalLoader:
             items = [item for index, item in enumerate(itemlist)]
         return items
 
-    def get_generated_test_cases_llama(self):
-        with open('testcases/humaneval_generated_testcases_llama3', 'rb') as fp:
+    def get_generated_test_cases_llama(self, run=1):
+        if run == 1:
+            test_path = 'testcases/humaneval_generated_testcases_llama3'
+        elif run == 2:
+            test_path = 'testcases/tests_run2/humaneval_generated_testcases_llama3'
+        elif run == 3:
+            test_path = 'testcases/tests_run3/humaneval_generated_testcases_llama3'
+        else:
+            raise ValueError('Invalid run')
+        with open(test_path, 'rb') as fp:
             itemlist = pickle.load(fp)
         print(f'len genertated tests: len(itemlist)')
         if self.instances:
@@ -69,8 +85,16 @@ class HumanEvalLoader:
             items = [item[:4] for index, item in enumerate(itemlist)]
         return items
 
-    def get_generated_test_cases_deepseek(self):
-        with open('testcases/humaneval_generated_testcases_deepseek-v3', 'rb') as fp:
+    def get_generated_test_cases_deepseek(self, run=1):
+        if run == 1:
+            test_path = 'testcases/humaneval_generated_testcases_deepseek-v3'
+        elif run == 2:
+            test_path = 'testcases/tests_run2/humaneval_generated_testcases_deepseek-v3'
+        elif run == 3:
+            test_path = 'testcases/tests_run3/humaneval_generated_testcases_deepseek-v3'
+        else:
+            raise ValueError('Invalid run')
+        with open(test_path, 'rb') as fp:
             itemlist = pickle.load(fp)
         if self.instances:
             items = [item for index, item in enumerate(itemlist) if index in self.instances]
@@ -78,8 +102,16 @@ class HumanEvalLoader:
             items = [item[:5] for index, item in enumerate(itemlist)]
         return items
 
-    def get_generated_test_cases_claude(self):
-        with open('testcases/humaneval_generated_testcases_claude-3.7-sonnet', 'rb') as fp:
+    def get_generated_test_cases_claude(self, run=1):
+        if run == 1:
+            test_path = 'testcases/humaneval_generated_testcases_claude-3.7-sonnet'
+        elif run == 2:
+            test_path = 'testcases/tests_run2/humaneval_generated_testcases_claude-3.7-sonnet'
+        elif run == 3:
+            test_path = 'testcases/tests_run3/humaneval_generated_testcases_claude-3.7-sonnet'
+        else:
+            raise ValueError('Invalid run')
+        with open(test_path, 'rb') as fp:
             itemlist = pickle.load(fp)
         if self.instances:
             items = [item for index, item in enumerate(itemlist) if index in self.instances]

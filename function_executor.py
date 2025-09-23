@@ -48,9 +48,10 @@ def run_test_cases(func_code, test_cases, timeout=5): ## correct version
             exec(test_case_str, test_namespace)
             return True
         except AssertionError:
+            print('assertion error')
             return False
         except Exception as e:
-            # print(f"Exception in test case '{test_case_str}': {e}")
+            print(f"Exception in test case '{test_case_str}': {e}")
             return False
 
     # Run test cases concurrently
@@ -91,8 +92,8 @@ def run_testcase(func_str, timeout=5) -> int:
             return 0
 
 def run_single_test_subprocess(code_str: str, test_str: str) -> Tuple[bool, int, int, str]:
-    if 'import subprocess' in test_str:
-        return (False, 0, 1, 'subprocess')
+    # if 'import subprocess' in test_str:
+    #     return (False, 0, 1, 'subprocess')
     with tempfile.TemporaryDirectory() as temp_dir:
         # temp_dir = '/home/hamed/PycharmProjects/hallucination/temp_dir2/'
         code_path = os.path.join(temp_dir, 'code.py')
@@ -123,9 +124,11 @@ def run_single_test_subprocess(code_str: str, test_str: str) -> Tuple[bool, int,
                 sys.exit(1)
 
         try:
+            current_dir = os.getcwd()
+            bigcode_python_path = current_dir + '/.bigcode_venv/bin/python3'
             # Execute the tests using subprocess
             completed_process = subprocess.run(
-                'python -m unittest test.py',
+                f'{bigcode_python_path} -m unittest test.py',
                 shell=True,
                 # check=True,
                 cwd=temp_dir,
