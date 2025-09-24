@@ -63,6 +63,11 @@ def generate_code_llamaapi(model_name, prompt):
     return filling, usage
 
 def generate_code_fireworks(model_name, prompt):
+    usage = {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0
+    }
     fire_work_key = os.getenv('fireworks_key')
     url = "https://api.fireworks.ai/inference/v1/chat/completions"
     payload = {
@@ -85,8 +90,12 @@ def generate_code_fireworks(model_name, prompt):
         "Content-Type": "application/json",
         "Authorization": f"Bearer {fire_work_key}"
     }
-    res = requests.request("POST", url, headers=headers, data=json.dumps(payload))
-    text = res.json()['choices'][0]['message']['content']
+    try:
+        res = requests.request("POST", url, headers=headers, data=json.dumps(payload))
+        text = res.json()['choices'][0]['message']['content']
+    except Exception as e:
+        print(e)
+        return prompt, usage
     usage = res.json()['usage']
     try:
         filling = IMPORT_HEADER + prompt + '\n' + text.split('```')[1].replace('python', '')
@@ -571,7 +580,7 @@ def evaluate_prompt_on_generated_prompts(generated_test_cases, prompt, codeLLama
 
 
 def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
-                         human_eval, iteration, magic_coder, model_to_test, number_of_tests, passed_codes, time_test,model_name,dataset_choice, gpt_client=None):
+                         human_eval, iteration, magic_coder, model_to_test, number_of_tests, passed_codes, time_test,model_name,dataset_choice, all_codes, gpt_client=None):
 
     e = time.time()
     if iteration != 1000:
@@ -614,11 +623,6 @@ def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, e
         elif model_to_test == 2:
             fillings = []
             for index, a_token in tqdm(enumerate(chosen_prompts)):
-                if not validate_prompt(
-                        a_token):
-                    filling = 'teeeeeeeeeeeeeeeeest'
-                    fillings.append([filling])
-                    continue
                 if not passed_codes[index]:
                     filling, _ = get_gpt_code_completion(gpt_client, a_token, model_name)
                     fillings.append(filling)
@@ -628,11 +632,6 @@ def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, e
         elif model_to_test == 3:
             fillings = []
             for index, a_token in tqdm(enumerate(chosen_prompts)):
-                if not validate_prompt(
-                        a_token):
-                    filling = 'teeeeeeeeeeeeeeeeest'
-                    fillings.append([filling])
-                    continue
                 if not passed_codes[index]:
                     filling, _ = generate_code_llamaapi(model_name=model_name, prompt=a_token)
                     fillings.append(filling)
@@ -642,16 +641,17 @@ def run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, e
         elif model_to_test in (4,5):
             fillings = []
             for index, a_token in tqdm(enumerate(chosen_prompts)):
-                if not validate_prompt(
-                        a_token):
-                    filling = 'teeeeeeeeeeeeeeeeest'
-                    fillings.append([filling])
-                    continue
                 if not passed_codes[index]:
-                    if model_to_test == 4:
-                        filling, _ = generate_code_sonnet(model_name=model_name, prompt=a_token)
-                    else:
-                        filling, _ = generate_code_fireworks(model_name=model_name, prompt=a_token)
+                    gen_codes = [iteration[index] for iteration in all_codes]
+                    flat_list = [item for sublist in gen_codes for item in sublist]
+                    flat_list.sort(key=lambda item: item[2], reverse=True)
+                    print(f'best score for {index}: {flat_list[0][2]}')
+                    filling = flat_list[0][1]
+                    print(f'{filling}')
+                    # if model_to_test == 4:
+                    #     filling, _ = generate_code_sonnet(model_name=model_name, prompt=a_token)
+                    # else:
+                    #     filling, _ = generate_code_fireworks(model_name=model_name, prompt=a_token)
                     fillings.append(filling)
                 else:
                     fillings.append(passed_codes[index])
@@ -1027,7 +1027,6 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
 
     ## pre evaluation
     base_prompts_re = []
-    from results.gpt_humaneval_code_completion import gpt_generated_codes
     time_total_per_instance.append([])
     time_evaluation.append([])
     time_next_make_generation.append([])
@@ -1212,7 +1211,7 @@ def run_genetic_algorithm_gensim_(codeLLama_tokenizer, codeLLama_model, magic_co
     if not run_evaluation_each_generation:
         final_code, errors_index = run_final_evaluation(chosen_prompts, codeLLama_model, codeLLama_tokenizer, evaluations, final_test_cases,
                              dataset, iteration, magic_coder, model_to_test, number_of_tests, passed_codes,
-                             time_test, model_name,dataset_choice,gpt_client)
+                             time_test, model_name,dataset_choice,all_codes, gpt_client)
     # print(passed_codes)
     # print('Final prompts:-----------------------------------')
     # print(chosen_prompts)
