@@ -152,7 +152,7 @@ class CodeEval(evaluate.Metric):
             license=_LICENSE,
         )
 
-    def _compute(self, predictions, references, k=[1, 10, 100], num_workers=4, timeout=1200):
+    def _compute(self, predictions, references, k=[1, 10, 100], num_workers=4, timeout=2400):
         """Returns the scores"""
 
         if os.getenv("HF_ALLOW_CODE_EVAL", 0) != "1":

@@ -38,12 +38,19 @@ This repository contains:
    git clone https://github.com/YourUserName/EPiC.git
    cd EPiC
    ```
-2. **Install** dependencies (preferably within a virtual environment):
-   ```bash
-   pip install -r requirements.txt
-   ```
-   This installs all the libraries needed for code generation, prompt engineering, and test-case generation.
----
+```bash
+# using venv
+python -m venv .venv
+source .venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+```bash
+# For running bigcodebench you need a separate env
+python3.10 env .bigcode_venv
+source .bigcode_venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements_bigcode.txt
+
+```
 
 ## Usage
 
